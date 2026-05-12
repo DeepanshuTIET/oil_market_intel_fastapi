@@ -1,4 +1,4 @@
-<![CDATA[# 🛢️ Oil Market Intelligence API
+# 🛢️ Oil Market Intelligence API
 
 > **FastAPI-powered analytics engine for oil market data ingestion, feature engineering, regime detection, and directional signal generation.**
 
@@ -624,4 +624,3 @@ Current test suite: `tests/test_transforms.py` — validates rolling z-score tra
 ## License
 
 No license file is currently present in this repository. Add one if distribution terms are required.
-]]>

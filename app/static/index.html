@@ -1,0 +1,2558 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Oil Intelligence Dashboard</title>
+  <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+
+  <style>
+    :root {
+      --bg: #080d1a;
+      --sidebar: #0d1426;
+      --panel: #121a2f;
+      --panel2: #0e1628;
+      --border: #25304a;
+      --text: #eef3ff;
+      --muted: #9aa8c7;
+      --blue: #4f8cff;
+      --green: #25d07c;
+      --red: #ff5c7c;
+      --yellow: #ffd166;
+      --purple: #8b5cf6;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, Segoe UI, Arial, sans-serif;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      height: 100vh;
+    }
+
+    .sidebar {
+      background: linear-gradient(180deg, #0d1426, #080d1a);
+      border-right: 1px solid var(--border);
+      padding: 20px 14px;
+      overflow-y: auto;
+    }
+
+    .brand {
+      padding: 8px 10px 20px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 14px;
+    }
+
+    .brand h1 {
+      font-size: 18px;
+      margin: 0;
+      line-height: 1.2;
+    }
+
+    .brand p {
+      margin: 7px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .nav button {
+      width: 100%;
+      text-align: left;
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      padding: 12px 13px;
+      margin: 4px 0;
+      border-radius: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .nav button:hover {
+      background: #17213a;
+      color: var(--text);
+    }
+
+    .nav button.active {
+      background: var(--blue);
+      color: white;
+    }
+
+    .content {
+      overflow-y: auto;
+      padding: 22px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .topbar h2 {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    .small {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .tab {
+      display: none;
+    }
+
+    .tab.active {
+      display: block;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(150px, 1fr));
+      gap: 14px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .card {
+      background: linear-gradient(180deg, var(--panel), var(--panel2));
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
+      margin-bottom: 14px;
+    }
+
+    .card h3 {
+      margin: 0 0 14px;
+      font-size: 17px;
+    }
+
+    .kpi {
+      background: #0a1020;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px;
+    }
+
+    .label {
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+
+    .value {
+      font-size: 24px;
+      font-weight: 900;
+      word-break: break-word;
+    }
+
+    .ok {
+      color: var(--green);
+    }
+
+    .bad {
+      color: var(--red);
+    }
+
+    .warn {
+      color: var(--yellow);
+    }
+
+    .bullish {
+      color: var(--green);
+    }
+
+    .bearish {
+      color: var(--red);
+    }
+
+    .neutral {
+      color: var(--yellow);
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    button.action {
+      border: 0;
+      background: var(--blue);
+      color: white;
+      padding: 10px 13px;
+      border-radius: 11px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    button.secondary {
+      background: #293655;
+    }
+
+    button.demo {
+      background: var(--purple);
+    }
+
+    button.danger {
+      background: var(--red);
+    }
+
+    button.action:hover {
+      filter: brightness(1.08);
+    }
+
+    pre {
+      background: #070c18;
+      border: 1px solid var(--border);
+      color: #cbd5ff;
+      border-radius: 14px;
+      padding: 14px;
+      overflow: auto;
+      max-height: 420px;
+      white-space: pre-wrap;
+      font-size: 12px;
+    }
+
+    .progress-wrap {
+      height: 14px;
+      background: #070c18;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 14px;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--blue), var(--green));
+      transition: width 0.25s ease;
+    }
+
+    .status-pill {
+      display: inline-block;
+      background: #1d2845;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 7px 11px;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .bars {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .barrow {
+      display: grid;
+      grid-template-columns: 260px 1fr 60px;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .barbg {
+      height: 12px;
+      border-radius: 999px;
+      background: #070c18;
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    .bar {
+      height: 100%;
+      border-radius: 999px;
+    }
+
+    svg {
+      width: 100%;
+      height: 300px;
+      background: #0a1020;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+    }
+
+    /* TradingView Lightweight Charts containers */
+    .tv-chart {
+      height: 360px;
+      width: 100%;
+      border-radius: 14px;
+      background: #080e1d;
+      border: 1px solid #1f2a44;
+      overflow: hidden;
+    }
+
+    .tv-chart-small {
+      height: 260px;
+      width: 100%;
+      border-radius: 14px;
+      background: #080e1d;
+      border: 1px solid #1f2a44;
+      overflow: hidden;
+    }
+
+    .chart-toolbar {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin: 10px 0;
+      flex-wrap: wrap;
+    }
+
+    .chart-pill {
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #101a31;
+      border: 1px solid #263653;
+      color: #9fb2d8;
+      font-size: 12px;
+    }
+
+    /* COT Leaderboard */
+    .leaderboard-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 10px;
+      padding: 10px;
+      border-bottom: 1px solid #1e2b45;
+      font-size: 13px;
+    }
+
+    .leaderboard-row.header {
+      color: #9aa8c7;
+      font-weight: 700;
+      background: #0a1020;
+    }
+
+    .leaderboard-row:hover {
+      background: #101a31;
+    }
+
+    .positive {
+      color: #25d07c;
+    }
+
+    .negative {
+      color: #ff5c7a;
+    }
+
+    /* COT Tab refinements */
+    #tab-cot .tv-chart-small {
+      min-height: 240px;
+    }
+
+    #tab-cot .card {
+      margin-bottom: 14px;
+    }
+
+    #cotTable table {
+      font-size: 12px;
+    }
+
+    #cotTable td:first-child,
+    #cotTable th:first-child {
+      white-space: nowrap;
+    }
+
+    /* Interpretation chips */
+    .interp-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .interp-chip {
+      background: #0a1020;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      text-align: center;
+    }
+
+    .interp-label {
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+
+    .interp-value {
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th,
+    td {
+      padding: 10px;
+      border-bottom: 1px solid var(--border);
+      text-align: right;
+    }
+
+    th:first-child,
+    td:first-child,
+    th:nth-child(2),
+    td:nth-child(2) {
+      text-align: left;
+    }
+
+    th {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    @media (max-width: 1000px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        height: auto;
+      }
+
+      .grid,
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+
+      .barrow {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>Oil Intelligence</h1>
+        <p>WPSR PDF → Features → Regime Signal</p>
+      </div>
+
+      <div class="nav">
+        <button class="active" onclick="showTab('overview', this)">Overview</button>
+        <button onclick="showTab('eia', this)">EIA WPSR</button>
+        <button onclick="showTab('qh', this)">QH APIs</button>
+        <button onclick="showTab('cot', this)">COT Petroleum</button>
+        <button onclick="showTab('sources', this)">Sources</button>
+        <button onclick="showTab('features', this)">Features</button>
+        <button onclick="showTab('signals', this)">Signals</button>
+        <button onclick="showTab('logs', this)">Logs</button>
+        <button onclick="showTab('debug', this)">Debug</button>
+      </div>
+    </aside>
+
+    <main class="content">
+      <div class="topbar">
+        <div>
+          <h2 id="pageTitle">Overview</h2>
+          <div class="small">Local SQLite dashboard using FastAPI backend</div>
+        </div>
+
+        <div class="row">
+          <a class="small" href="/docs">API Docs</a>
+          <button class="action secondary" onclick="refreshAll()">Refresh</button>
+        </div>
+      </div>
+
+      <section id="tab-overview" class="tab active">
+        <div class="grid">
+          <div class="kpi">
+            <div class="label">API</div>
+            <div id="apiStatus" class="value warn">Checking</div>
+          </div>
+
+          <div class="kpi">
+            <div class="label">Database</div>
+            <div id="dbStatus" class="value warn">Checking</div>
+          </div>
+
+          <div class="kpi">
+            <div class="label">Latest Signal</div>
+            <div id="overviewSignal" class="value">--</div>
+          </div>
+
+          <div class="kpi">
+            <div class="label">Regime</div>
+            <div id="overviewRegime" class="value">--</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Pipeline</h3>
+
+          <div class="row">
+            <button class="action" onclick="runStep('eia', '/ingest/eia')">Ingest EIA PDF</button>
+            <button class="action secondary" onclick="runStep('eiaquant', '/eia/pdf/run')">Run EIA PDF Report</button>
+            <button class="action secondary" onclick="runStep('features', '/features/build')">Build Features</button>
+            <button class="action secondary" onclick="runStep('signal', '/signals/run?instrument=WTI&horizon=5d')">Run Signal</button>
+            <button class="action demo" onclick="runDemoFlow()">Demo Full Flow</button>
+          </div>
+
+          <div class="progress-wrap">
+            <div id="progressBar" class="progress-bar"></div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <h3>Feature Z-Scores</h3>
+            <div id="featureBars" class="bars"></div>
+          </div>
+
+          <div class="card">
+            <h3>Latest Signal JSON</h3>
+            <pre id="signalJson">No signal yet.</pre>
+          </div>
+        </div>
+      </section>
+
+      <section id="tab-eia" class="tab">
+        <div class="card">
+          <h3>EIA Weekly Auto Update</h3>
+
+          <div class="small">
+            This bar fetches the latest public EIA WPSR PDF, parses it, stores the latest weekly observations in SQLite, refreshes the parsed table, and updates the refinery utilization chart.
+          </div>
+
+          <div class="progress-wrap">
+            <div id="eiaUpdateProgress" class="progress-bar"></div>
+          </div>
+
+          <div class="row" style="margin-top: 14px;">
+            <button class="action" onclick="updateEiaTab()">Fetch Latest EIA + Update Tab</button>
+            <button class="action secondary" onclick="runStep('eia', '/ingest/eia')">Ingest EIA PDF to SQLite</button>
+            <button class="action secondary" onclick="runEiaPdfReport()">Parse PDF Report</button>
+            <button class="action secondary" onclick="refreshEiaRefineryChart()">Refresh Refinery Chart</button>
+          </div>
+
+          <pre id="eiaUpdateStatus">Ready.</pre>
+        </div>
+
+        <div class="grid">
+          <div class="kpi">
+            <div class="label">Latest Refinery Utilization</div>
+            <div id="latestRefineryUtilization" class="value">--</div>
+          </div>
+
+          <div class="kpi">
+            <div class="label">WoW Change</div>
+            <div id="latestRefineryUtilizationWow" class="value">--</div>
+          </div>
+
+          <div class="kpi">
+            <div class="label">Four-Week Average</div>
+            <div id="latestRefineryUtilization4w" class="value">--</div>
+          </div>
+
+          <div class="kpi">
+            <div class="label">Signal</div>
+            <div id="latestRefineryUtilizationSignal" class="value">--</div>
+          </div>
+        </div>
+
+                <div class="card">
+          <h3>Refinery Utilization Weekly Chart</h3>
+          <div id="refineryUtilizationChartTv" style="height:320px;"></div>
+          <div class="small">
+            Stored weekly in SQLite. Historical weeks remain in the database; rerunning the same week updates that week only.
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>EIA Latest Parsed Table</h3>
+          <div id="eiaTable">No EIA report loaded yet.</div>
+        </div>
+      </section>
+
+      <section id="tab-qh" class="tab">
+        <div class="card">
+          <h3>QuantHub OHLC v2</h3>
+
+          <div class="row">
+            <label style="color: var(--muted); font-size: 12px;">QH Code:</label>
+            <input id="qhProduct" type="text" value="CLN26" style="background: #0a1020; border: 1px solid var(--border); color: var(--text); padding: 8px; border-radius: 8px; margin-right: 8px; width: 100px;">
+            <label style="color: var(--muted); font-size: 12px;">Interval:</label>
+            <select id="qhInterval" style="background: #0a1020; border: 1px solid var(--border); color: var(--text); padding: 8px; border-radius: 8px; margin-right: 8px;">
+              <option value="1D">1D</option>
+              <option value="1H">1H</option>
+              <option value="5M">5M</option>
+            </select>
+            <label style="color: var(--muted); font-size: 12px;">Count:</label>
+            <input id="qhCount" type="number" value="50" style="background: #0a1020; border: 1px solid var(--border); color: var(--text); padding: 8px; border-radius: 8px; margin-right: 8px; width: 70px;">
+            <button class="action" onclick="ingestQuantHubOhlcStructured()">Fetch + Store OHLC</button>
+            <button class="action secondary" onclick="debugQuantHubAuthStructured()">Auth Debug</button>
+            <button class="action secondary" onclick="refreshQuantHubHistory()">Refresh Stored Data</button>
+          </div>
+
+          <div class="progress-wrap">
+            <div id="qhProgress" class="progress-bar"></div>
+          </div>
+
+          <div class="small" id="qhStatus" style="margin-top: 8px;">Ready.</div>
+        </div>
+
+        <div class="grid">
+          <div class="kpi">
+            <div class="label">Product</div>
+            <div id="qhKpiProduct" class="value">--</div>
+          </div>
+
+          <div class="kpi">
+            <div class="label">Candles</div>
+            <div id="qhKpiCandles" class="value">--</div>
+          </div>
+
+          <div class="kpi">
+            <div class="label">Latest Close</div>
+            <div id="qhKpiClose" class="value">--</div>
+          </div>
+
+          <div class="kpi">
+            <div class="label">Latest Volume</div>
+            <div id="qhKpiVolume" class="value">--</div>
+          </div>
+        </div>
+
+                <div class="card">
+          <h3>OHLC Chart</h3>
+          <div id="qhOhlcChartTv" style="height:400px;"></div>
+        </div>
+
+        <div class="card">
+          <h3>OHLC Table</h3>
+          <div id="qhOhlcTable">No QuantHub data loaded yet.</div>
+        </div>
+
+        <div class="card">
+          <h3>Raw JSON Response</h3>
+          <pre id="qhResponseJson">No request made yet.</pre>
+        </div>
+      </section>
+
+      <section id="tab-cot" class="tab">
+        <div class="card">
+          <h3>CFTC COT Petroleum</h3>
+
+          <div class="row">
+            <label style="color: var(--muted); font-size: 12px;">Mode:</label>
+            <select id="cotMode" style="background: #0a1020; border: 1px solid var(--border); color: var(--text); padding: 8px; border-radius: 8px; margin-right: 8px;">
+              <option value="futures">Futures Only</option>
+              <option value="combined">Futures + Options</option>
+            </select>
+            <label style="color: var(--muted); font-size: 12px;">Contract:</label>
+            <input id="cotContract" type="text" value="WTI" style="background: #0a1020; border: 1px solid var(--border); color: var(--text); padding: 8px; border-radius: 8px; margin-right: 8px; width: 100px;">
+            <button class="action" onclick="ingestCotPetroleum()">Fetch + Store COT</button>
+            <button class="action secondary" onclick="refreshCotPetroleum()">Refresh COT</button>
+            <button class="action secondary" onclick="copyCotJsonToClipboard()">Copy JSON</button>
+          </div>
+
+          <div class="progress-wrap">
+            <div id="cotProgress" class="progress-bar"></div>
+          </div>
+
+          <div class="small" id="cotStatus" style="margin-top: 8px;">Ready.</div>
+        </div>
+
+        <div class="grid">
+          <div class="kpi">
+            <div class="label">Open Interest</div>
+            <div id="cotOpenInterest" class="value">--</div>
+          </div>
+
+          <div class="kpi">
+            <div class="label">Managed Money Net</div>
+            <div id="cotMmNet" class="value">--</div>
+          </div>
+
+          <div class="kpi">
+            <div class="label">MM Net % OI</div>
+            <div id="cotMmNetPct" class="value">--</div>
+          </div>
+
+          <div class="kpi">
+            <div class="label">Dealer vs Spec</div>
+            <div id="cotDealerVsSpec" class="value">--</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>COT Signals</h3>
+          <div id="cotSignalBox">No COT signal data loaded yet.</div>
+        </div>
+
+        <div class="card">
+          <h3>COT Interpretation</h3>
+          <div class="interp-grid">
+            <div class="interp-chip">
+              <div class="interp-label">MM Positioning</div>
+              <div id="cotInterpretation" class="interp-value neutral">--</div>
+            </div>
+            <div class="interp-chip">
+              <div class="interp-label">Crowding</div>
+              <div id="cotCrowding" class="interp-value neutral">--</div>
+            </div>
+            <div class="interp-chip">
+              <div class="interp-label">Swap Pressure</div>
+              <div id="cotSwapPressure" class="interp-value neutral">--</div>
+            </div>
+            <div class="interp-chip">
+              <div class="interp-label">Producer Bias</div>
+              <div id="cotProducerBias" class="interp-value neutral">--</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <h3>Managed Money Net Positioning</h3>
+            <div class="chart-toolbar">
+              <span class="chart-pill">Cross-sectional: Latest report date</span>
+            </div>
+            <div id="cotMmNetChart" class="tv-chart-small"></div>
+          </div>
+
+          <div class="card">
+            <h3>Dealer vs Spec Divergence</h3>
+            <div class="chart-toolbar">
+              <span class="chart-pill">Cross-sectional: Latest report date</span>
+            </div>
+            <div id="cotDealerChart" class="tv-chart-small"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Contract Leaderboard (by MM Net)</h3>
+          <div id="cotLeaderboard">No COT data loaded yet.</div>
+        </div>
+
+        <div class="card" style="opacity: 0.7;">
+          <h3>COT Historical Charts (Requires time-series data)</h3>
+          <div class="chart-toolbar">
+            <span class="chart-pill">Time-series view (disabled - needs historical backfill)</span>
+          </div>
+          <div id="cotChartTv" style="height:200px; display:none;"></div>
+          <div id="cotZChartTv" style="height:150px; display:none;"></div>
+          <div class="small" style="padding: 20px; text-align: center; color: var(--muted);">
+            Historical COT time-series charts will appear here once multiple report dates are available.
+            Currently showing cross-sectional analysis above.
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>COT Petroleum Table</h3>
+          <div id="cotTable">No COT data loaded yet.</div>
+        </div>
+
+        <div class="card">
+          <h3>Raw JSON Response</h3>
+          <pre id="cotJson">No request made yet.</pre>
+        </div>
+
+        <div class="small" style="text-align: center; padding: 10px; color: var(--muted);">
+          Charts powered by <a href="https://www.tradingview.com/lightweight-charts/" target="_blank" style="color: var(--blue);">TradingView Lightweight Charts</a> — open-source financial charting library.
+        </div>
+      </section>
+
+      <section id="tab-sources" class="tab">
+        <div class="card">
+          <h3>Source Ingestion</h3>
+
+          <div class="row">
+            <button class="action" onclick="runStep('eia', '/ingest/eia')">EIA PDF</button>
+            <button class="action" onclick="runStep('x', '/ingest/x?max_results=50')">X</button>
+            <button class="action" onclick="runStep('cot', '/ingest/cot-scrape')">COT Scrape</button>
+          </div>
+
+          <div class="row" style="margin-top: 12px;">
+            <label style="color: var(--muted); font-size: 12px;">QuantHub Instruments:</label>
+            <input id="qhInstruments" type="text" placeholder="YOUR_QH_CODE" style="background: #0a1020; border: 1px solid var(--border); color: var(--text); padding: 8px; border-radius: 8px; margin-right: 8px;">
+            <label style="color: var(--muted); font-size: 12px;">Interval:</label>
+            <select id="qhInterval" style="background: #0a1020; border: 1px solid var(--border); color: var(--text); padding: 8px; border-radius: 8px; margin-right: 8px;">
+              <option value="1D">1D</option>
+              <option value="1H">1H</option>
+              <option value="5M">5M</option>
+            </select>
+            <button class="action" onclick="ingestQuantHubOhlcV2()">Ingest QH OHLC v2</button>
+            <button class="action secondary" onclick="ingestQuantHubFairValue()">Ingest QH FairValue</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Configuration</h3>
+          <pre id="configJson">Loading...</pre>
+        </div>
+      </section>
+
+      <section id="tab-features" class="tab">
+        <div class="card">
+          <h3>Feature Builder</h3>
+
+          <div class="row">
+            <button class="action" onclick="runStep('features', '/features/build')">Build Features</button>
+            <button class="action secondary" onclick="refreshFeatures()">Refresh Features</button>
+          </div>
+        </div>
+
+                <div class="card">
+          <h3>Feature Matrix Trend</h3>
+          <div id="featureMatrixChartTv" style="height:350px;"></div>
+        </div>
+
+        <div class="card">
+          <h3>Latest Features</h3>
+          <pre id="featuresJson">[]</pre>
+        </div>
+      </section>
+
+      <section id="tab-signals" class="tab">
+        <div class="card">
+          <h3>Signal Engine</h3>
+
+          <div class="row">
+            <button class="action" onclick="runStep('signal', '/signals/run?instrument=WTI&horizon=5d')">Run WTI 5D Signal</button>
+            <button class="action secondary" onclick="refreshSignal()">Refresh Signal</button>
+          </div>
+        </div>
+
+        <div class="grid">
+          <div class="kpi">
+            <div class="label">Probability Up</div>
+            <div id="pup" class="value">--</div>
+          </div>
+
+          <div class="kpi">
+            <div class="label">Probability Down</div>
+            <div id="pdown" class="value">--</div>
+          </div>
+
+          <div class="kpi">
+            <div class="label">Expected Return</div>
+            <div id="eret" class="value">--</div>
+          </div>
+
+          <div class="kpi">
+            <div class="label">Confidence</div>
+            <div id="conf" class="value">--</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Signal Detail</h3>
+          <pre id="signalDetail">No signal yet.</pre>
+        </div>
+      </section>
+
+      <section id="tab-logs" class="tab">
+        <div class="card">
+          <h3>Detailed Logs</h3>
+
+          <div style="display:flex; gap:10px; margin-bottom:10px;">
+            <button class="action" onclick="copyLogsToClipboard()">Copy Logs</button>
+            <button class="action danger" onclick="clearLogs()">Clear Logs</button>
+          </div>
+
+          <pre id="logBox">Dashboard initialized.</pre>
+        </div>
+      </section>
+
+      <section id="tab-debug" class="tab">
+        <div class="card">
+          <h3>Debug Tools</h3>
+
+          <div class="row">
+            <button class="action" onclick="checkSystem()">Check System</button>
+            <button class="action secondary" onclick="loadConfig()">Load Config</button>
+            <button class="action secondary" onclick="checkDb()">Check DB</button>
+            <button class="action secondary" onclick="debugEiaPdf()">Debug EIA PDF</button>
+            <button class="action secondary" onclick="loadAppLogs()">Load App Logs</button>
+            <button class="action secondary" onclick="loadEiaLogs()">Load EIA Logs</button>
+            <button class="action secondary" onclick="debugQuantHubAuth()">Debug QuantHub Auth</button>
+            <button class="action secondary" onclick="debugQuantHubEndpoint('tas')">Debug QH TAS</button>
+            <button class="action secondary" onclick="debugQuantHubEndpoint('ohlc_v2')">Debug QH OHLC v2</button>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <h3>Health</h3>
+            <pre id="healthJson">Loading...</pre>
+          </div>
+
+          <div class="card">
+            <h3>DB Debug</h3>
+            <pre id="dbJson">Loading...</pre>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>EIA PDF Debug</h3>
+          <pre id="eiaDebugJson">Not loaded.</pre>
+          <pre id="appLogsJson">Not loaded.</pre>
+        </div>
+
+        <div class="card">
+          <h3>EIA Logs</h3>
+          <pre id="eiaLogsJson">Not loaded.</pre>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const logBox = document.getElementById("logBox");
+    const progressBar = document.getElementById("progressBar");
+
+    function showTab(name, btn) {
+      document.querySelectorAll(".tab").forEach(x => x.classList.remove("active"));
+      document.querySelectorAll(".nav button").forEach(x => x.classList.remove("active"));
+
+      document.getElementById("tab-" + name).classList.add("active");
+      btn.classList.add("active");
+
+      document.getElementById("pageTitle").textContent =
+        name.charAt(0).toUpperCase() + name.slice(1);
+
+      if (name === "qh") {
+        refreshQuantHubHistory();
+      }
+
+      if (name === "cot") {
+        refreshCotPetroleum();
+      }
+    }
+
+    function setQhProgress(value, message = null) {
+      const bar = document.getElementById("qhProgress");
+      const status = document.getElementById("qhStatus");
+
+      if (bar) {
+        bar.style.width = Math.max(0, Math.min(100, value)) + "%";
+      }
+
+      if (message && status) {
+        status.textContent = message;
+      }
+    }
+
+    async function debugQuantHubAuthStructured() {
+      setQhProgress(10, "Testing QuantHub authentication...");
+
+      const result = await request("GET", "/debug/quanthub/auth");
+
+      document.getElementById("qhResponseJson").textContent =
+        JSON.stringify(result.data, null, 2);
+
+      if (result.ok) {
+        setQhProgress(100, "QuantHub authentication successful.");
+        log("QuantHub auth successful", result.data, "success");
+      } else {
+        setQhProgress(100, "QuantHub authentication failed.");
+        log("QuantHub auth failed", result.data, "error");
+      }
+    }
+
+    async function ingestQuantHubOhlcStructured() {
+      const product = document.getElementById("qhProduct").value.trim();
+      const interval = document.getElementById("qhInterval").value;
+      const count = document.getElementById("qhCount").value || "50";
+
+      if (!product) {
+        setQhProgress(100, "Please enter a QH product code.");
+        log("QuantHub OHLC requires a product code", null, "warn");
+        return;
+      }
+
+      setQhProgress(10, "Starting QuantHub OHLC fetch...");
+
+      const url =
+        "/ingest/quanthub/ohlc-v2?instruments=" +
+        encodeURIComponent(product) +
+        "&interval=" +
+        encodeURIComponent(interval) +
+        "&count=" +
+        encodeURIComponent(count);
+
+      const result = await request("POST", url);
+
+      document.getElementById("qhResponseJson").textContent =
+        JSON.stringify(result.data, null, 2);
+
+      if (!result.ok) {
+        setQhProgress(100, "QuantHub OHLC fetch failed. Check logs.");
+        log("QuantHub OHLC ingestion failed", result.data, "error");
+        return;
+      }
+
+      setQhProgress(65, "QuantHub OHLC stored. Loading structured history...");
+
+      await refreshQuantHubHistory();
+
+      setQhProgress(100, "QuantHub OHLC tab updated successfully.");
+
+      log("QuantHub OHLC ingestion successful", result.data, "success");
+    }
+
+    async function refreshQuantHubHistory() {
+      const product = document.getElementById("qhProduct").value.trim() || "CLN26";
+
+      setQhProgress(20, "Loading stored QuantHub OHLC history...");
+
+      const result = await request(
+        "GET",
+        "/quanthub/history?product=" + encodeURIComponent(product) + "&endpoint_key=ohlc_v2&limit=300"
+      );
+
+      document.getElementById("qhResponseJson").textContent =
+        JSON.stringify(result.data, null, 2);
+
+      if (!result.ok || !result.data.ohlc || !result.data.ohlc.length) {
+        setQhProgress(100, "No stored QuantHub OHLC data found or history endpoint failed.");
+                document.getElementById("qhOhlcTable").innerHTML = "No QuantHub data loaded yet.";
+        clearQhKpis();
+        const qhContainer = document.getElementById("qhOhlcChartTv");
+        if (qhContainer) qhContainer.innerHTML = '<div class="small" style="padding:20px;">No QuantHub data loaded yet.</div>';
+
+        log("QH history failed or empty. Running diagnostics...", result.data, "warn");
+
+        const routesDiag = await request("GET", "/debug/app-routes");
+        log("App routes diagnostic", routesDiag.data, routesDiag.ok ? "success" : "error");
+
+        const countsDiag = await request("GET", "/debug/quanthub/counts");
+        log("QuantHub counts diagnostic", countsDiag.data, countsDiag.ok ? "success" : "error");
+
+        const rawDiag = await request(
+          "GET",
+          "/debug/quanthub/raw?product=" + encodeURIComponent(product) + "&endpoint_key=ohlc_v2&limit=10"
+        );
+        log("QuantHub raw diagnostic", rawDiag.data, rawDiag.ok ? "success" : "error");
+
+        return;
+      }
+
+            updateQhKpis(result.data);
+      renderQhOhlcTable(result.data.ohlc);
+      renderQhOhlcChartTv(result.data.ohlc);
+
+      setQhProgress(100, "Stored QuantHub OHLC loaded.");
+    }
+
+    function clearQhKpis() {
+      document.getElementById("qhKpiProduct").textContent = "--";
+      document.getElementById("qhKpiCandles").textContent = "--";
+      document.getElementById("qhKpiClose").textContent = "--";
+      document.getElementById("qhKpiVolume").textContent = "--";
+    }
+
+
+    function updateQhKpis(data) {
+      const latest = data.latest || {};
+
+      document.getElementById("qhKpiProduct").textContent =
+        data.product || "--";
+
+      document.getElementById("qhKpiCandles").textContent =
+        data.count || 0;
+
+      document.getElementById("qhKpiClose").textContent =
+        latest.close === undefined || latest.close === null
+          ? "--"
+          : formatNum(latest.close);
+
+      document.getElementById("qhKpiVolume").textContent =
+        latest.volume === undefined || latest.volume === null
+          ? "--"
+          : formatNum(latest.volume);
+    }
+
+    function renderQhOhlcTable(rows) {
+      if (!rows || !rows.length) {
+        document.getElementById("qhOhlcTable").innerHTML = "No QuantHub data loaded yet.";
+        return;
+      }
+
+      let html = `
+        <table>
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Open</th>
+              <th>High</th>
+              <th>Low</th>
+              <th>Close</th>
+              <th>Volume</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      rows.slice().reverse().forEach(row => {
+        html += `
+          <tr>
+            <td>${row.timestamp || "--"}</td>
+            <td>${formatNum(row.open)}</td>
+            <td>${formatNum(row.high)}</td>
+            <td>${formatNum(row.low)}</td>
+            <td>${formatNum(row.close)}</td>
+            <td>${formatNum(row.volume)}</td>
+          </tr>
+        `;
+      });
+
+      html += `
+          </tbody>
+        </table>
+      `;
+
+      document.getElementById("qhOhlcTable").innerHTML = html;
+    }
+
+        function renderQhOhlcChartTv(rows) {
+      if (!rows || !rows.length) return;
+      
+      const chart = createChart("qhOhlcChartTv");
+      if (!chart) return;
+
+      const candleSeries = chart.addCandlestickSeries({
+        upColor: "#25d07c",
+        downColor: "#ff5c7c",
+        borderDownColor: "#ff5c7c",
+        borderUpColor: "#25d07c",
+        wickDownColor: "#ff5c7c",
+        wickUpColor: "#25d07c",
+      });
+
+      const volumeSeries = chart.addHistogramSeries({
+        color: "rgba(37, 208, 124, 0.3)",
+        priceFormat: { type: "volume" },
+        priceScaleId: "volume",
+        scaleMargins: {
+          top: 0.8,
+          bottom: 0,
+        },
+      });
+
+      chart.priceScale("volume").applyOptions({
+        visible: false,
+      });
+
+      const candleData = rows
+        .filter(r => r.timestamp && r.open !== undefined)
+        .map(r => ({
+          time: r.timestamp.slice(0, 10),
+          open: Number(r.open),
+          high: Number(r.high),
+          low: Number(r.low),
+          close: Number(r.close),
+        }))
+        .sort((a, b) => a.time.localeCompare(b.time));
+
+      const volumeData = rows
+        .filter(r => r.timestamp && r.volume !== undefined)
+        .map(r => ({
+          time: r.timestamp.slice(0, 10),
+          value: Number(r.volume),
+          color: Number(r.close) >= Number(r.open) ? "rgba(37, 208, 124, 0.3)" : "rgba(255, 92, 124, 0.3)",
+        }))
+        .sort((a, b) => a.time.localeCompare(b.time));
+
+      candleSeries.setData(candleData);
+      volumeSeries.setData(volumeData);
+
+      chart.timeScale().fitContent();
+    }
+
+    function renderQhOhlcChart(rows) {
+      // Deprecated: replaced by renderQhOhlcChartTv
+    }
+
+    // --- Visualization Layer (Lightweight Charts) ---
+
+    // Chart registry for memory management
+    const tvCharts = {};
+
+    function destroyTvChart(key) {
+      if (tvCharts[key]) {
+        tvCharts[key].remove();
+        delete tvCharts[key];
+      }
+    }
+
+    function createBaseTvChart(containerId, height = 320) {
+      const container = document.getElementById(containerId);
+
+      if (!container) {
+        console.warn("Chart container not found:", containerId);
+        return null;
+      }
+
+      container.innerHTML = "";
+
+      const chart = LightweightCharts.createChart(container, {
+        height,
+        layout: {
+          background: { color: "#080e1d" },
+          textColor: "#9aa8c7",
+          fontSize: 12,
+        },
+        grid: {
+          vertLines: { color: "#14203a" },
+          horzLines: { color: "#14203a" },
+        },
+        crosshair: {
+          mode: LightweightCharts.CrosshairMode.Normal,
+        },
+        rightPriceScale: {
+          borderColor: "#25304a",
+        },
+        timeScale: {
+          borderColor: "#25304a",
+          timeVisible: true,
+          secondsVisible: false,
+        },
+      });
+
+      // Resize observer for responsiveness
+      const resizeObserver = new ResizeObserver(entries => {
+        if (entries.length === 0 || !entries[0].contentRect) return;
+        const { width, height } = entries[0].contentRect;
+        chart.applyOptions({ width, height });
+      });
+      resizeObserver.observe(container);
+
+      return chart;
+    }
+
+    function toUnixDateSeconds(value) {
+      const date = new Date(value);
+      return Math.floor(date.getTime() / 1000);
+    }
+
+    // Legacy createChart (kept for backward compatibility)
+    function createChart(containerId, options = {}) {
+      const container = document.getElementById(containerId);
+      if (!container) return null;
+      container.innerHTML = ""; // reset safely
+      
+      const chart = LightweightCharts.createChart(container, {
+        layout: {
+          background: { color: "#0d1426" },
+          textColor: "#9aa8c7",
+          fontSize: 12,
+          fontFamily: "Inter, Segoe UI, Arial, sans-serif",
+        },
+        grid: {
+          vertLines: { color: "#17213a" },
+          horzLines: { color: "#17213a" },
+        },
+        crosshair: {
+          mode: LightweightCharts.CrosshairMode.Normal,
+        },
+        timeScale: {
+          timeVisible: true,
+          secondsVisible: false,
+          borderColor: "#25304a",
+        },
+        rightPriceScale: {
+          borderColor: "#25304a",
+        },
+        handleScroll: true,
+        handleScale: true,
+        ...options,
+      });
+
+      // Resize observer to make chart responsive
+      const resizeObserver = new ResizeObserver(entries => {
+        if (entries.length === 0 || !entries[0].contentRect) return;
+        const { width, height } = entries[0].contentRect;
+        chart.applyOptions({ width, height });
+      });
+      resizeObserver.observe(container);
+
+      return chart;
+    }
+
+    function mapToSeries(rows, key) {
+      if (!rows) return [];
+      return rows
+        .filter(r => r.timestamp && r[key] !== undefined && r[key] !== null)
+        .map(r => ({
+          time: r.timestamp.slice(0, 10), // YYYY-MM-DD
+          value: Number(r[key]),
+        }))
+        .sort((a, b) => a.time.localeCompare(b.time));
+    }
+
+        function renderCotTradingViewChart(rows) {
+      if (!rows || !rows.length) return;
+      
+      const chart = createChart("cotChartTv");
+      if (!chart) return;
+
+      const mmSeries = chart.addLineSeries({
+        color: "#4f8cff",
+        lineWidth: 2,
+        title: "Managed Money Net",
+      });
+
+      const dealerSeries = chart.addLineSeries({
+        color: "#ffd166",
+        lineWidth: 2,
+        title: "Dealer vs Spec",
+      });
+
+      const oiSeries = chart.addHistogramSeries({
+        color: "rgba(37, 208, 124, 0.3)",
+        priceFormat: { type: "volume" },
+        priceScaleId: "oi",
+        scaleMargins: {
+          top: 0.8,
+          bottom: 0,
+        },
+      });
+
+      chart.priceScale("oi").applyOptions({
+        visible: false,
+      });
+
+      const mmData = mapToSeries(rows, "mm_net");
+      const dealerData = mapToSeries(rows, "dealer_vs_spec");
+      const oiData = mapToSeries(rows, "open_interest");
+
+      mmSeries.setData(mmData);
+      dealerSeries.setData(dealerData);
+      oiSeries.setData(oiData);
+
+      chart.timeScale().fitContent();
+
+      // Render Z-score chart
+      renderCotZChart(rows);
+    }
+
+    function renderCotZChart(rows) {
+      if (!rows || !rows.length) return;
+      
+      const chart = createChart("cotZChartTv", {
+        rightPriceScale: {
+          mode: 0, // Normal
+          autoScale: false,
+        }
+      });
+      if (!chart) return;
+
+      chart.priceScale("right").applyOptions({
+        minValue: -4,
+        maxValue: 4,
+      });
+
+      const mmZSeries = chart.addLineSeries({
+        color: "#4f8cff",
+        lineWidth: 2,
+        title: "MM Net Z-score",
+      });
+
+      const dealerZSeries = chart.addLineSeries({
+        color: "#ffd166",
+        lineWidth: 2,
+        title: "Dealer vs Spec Z-score",
+      });
+
+      // Regime bands (horizontal lines at 2, -2)
+      const upperBand = chart.addLineSeries({
+        color: "#ff5c7c",
+        lineWidth: 1,
+        lineStyle: 2, // Dashed
+        title: "Upper Bound (+2)",
+      });
+
+      const lowerBand = chart.addLineSeries({
+        color: "#25d07c",
+        lineWidth: 1,
+        lineStyle: 2, // Dashed
+        title: "Lower Bound (-2)",
+      });
+
+      const mmZData = mapToSeries(rows, "mm_net_z");
+      const dealerZData = mapToSeries(rows, "dealer_vs_spec_z");
+
+      mmZSeries.setData(mmZData);
+      dealerZSeries.setData(dealerZData);
+
+      if (mmZData.length > 0) {
+        const t1 = mmZData[0].time;
+        const t2 = mmZData[mmZData.length - 1].time;
+        upperBand.setData([{ time: t1, value: 2 }, { time: t2, value: 2 }]);
+        lowerBand.setData([{ time: t1, value: -2 }, { time: t2, value: -2 }]);
+      }
+
+      chart.timeScale().fitContent();
+    }
+
+    function now() {
+      return new Date().toLocaleTimeString();
+    }
+
+    function log(message, data = null, level = "info") {
+      const icon =
+        level === "error" ? "❌" :
+        level === "success" ? "✅" :
+        level === "warn" ? "⚠️" : "ℹ️";
+
+      let output = `[${now()}] ${icon} ${message}`;
+
+      if (data !== null) {
+        output += "\n" + JSON.stringify(data, null, 2);
+      }
+
+      logBox.textContent = output + "\n\n" + logBox.textContent;
+    }
+
+    function clearLogs() {
+      logBox.textContent = "Logs cleared.";
+    }
+
+    async function copyLogsToClipboard() {
+      const text = logBox ? logBox.textContent : "";
+
+      if (!text || !text.trim()) {
+        log("No logs available to copy.", null, "warn");
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(text);
+        log("All dashboard logs copied to clipboard.", null, "success");
+      } catch (error) {
+        // Fallback for browsers where navigator.clipboard is blocked.
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        textarea.style.position = "fixed";
+        textarea.style.left = "-9999px";
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+
+        try {
+          document.execCommand("copy");
+          log("All dashboard logs copied to clipboard using fallback.", null, "success");
+        } catch (fallbackError) {
+          log(
+            "Failed to copy logs to clipboard.",
+            {
+              error: String(error),
+              fallback_error: String(fallbackError),
+            },
+            "error"
+          );
+        }
+
+        document.body.removeChild(textarea);
+      }
+    }
+
+    function setProgress(value) {
+      progressBar.style.width = Math.max(0, Math.min(100, value)) + "%";
+    }
+
+    async function request(method, url) {
+      log(`${method} ${url} started`);
+
+      const started = performance.now();
+
+      try {
+        const response = await fetch(url, { method });
+        const text = await response.text();
+
+        let data;
+
+        try {
+          data = JSON.parse(text);
+        } catch {
+          data = { raw_text: text };
+        }
+
+        const ms = Math.round(performance.now() - started);
+
+        if (!response.ok) {
+          log(`${method} ${url} failed in ${ms}ms`, {
+            status: response.status,
+            response: data,
+          }, "error");
+
+          return { ok: false, status: response.status, data };
+        }
+
+        log(`${method} ${url} succeeded in ${ms}ms`, data, "success");
+
+        return { ok: true, status: response.status, data };
+
+      } catch (error) {
+        log(`${method} ${url} network error`, { error: String(error) }, "error");
+        return { ok: false, status: 0, data: { error: String(error) } };
+      }
+    }
+
+    async function runStep(name, url) {
+      setProgress(20);
+
+      const result = await request("POST", url);
+
+      if (name === "eiaquant" && result.ok) {
+        renderEiaTable(result.data.latest || []);
+      }
+
+      setProgress(70);
+      await refreshAll();
+      setProgress(100);
+
+      return result;
+    }
+
+    async function runDemoFlow() {
+      setProgress(0);
+
+      await request("POST", "/ingest/demo");
+      setProgress(30);
+
+      await request("POST", "/features/build");
+      setProgress(65);
+
+      await request("POST", "/signals/run?instrument=WTI&horizon=5d");
+      setProgress(90);
+
+      await refreshAll();
+      setProgress(100);
+    }
+
+    async function checkSystem() {
+      await loadHealth();
+      await checkDb();
+    }
+
+    async function loadHealth() {
+      const result = await request("GET", "/health");
+
+      document.getElementById("healthJson").textContent =
+        JSON.stringify(result.data, null, 2);
+
+      if (result.ok) {
+        document.getElementById("apiStatus").textContent = "Running";
+        document.getElementById("apiStatus").className = "value ok";
+      } else {
+        document.getElementById("apiStatus").textContent = "Error";
+        document.getElementById("apiStatus").className = "value bad";
+      }
+    }
+
+    async function checkDb() {
+      const result = await request("GET", "/debug/db");
+
+      document.getElementById("dbJson").textContent =
+        JSON.stringify(result.data, null, 2);
+
+      if (result.ok) {
+        document.getElementById("dbStatus").textContent = "Connected";
+        document.getElementById("dbStatus").className = "value ok";
+      } else {
+        document.getElementById("dbStatus").textContent = "Disconnected";
+        document.getElementById("dbStatus").className = "value bad";
+      }
+    }
+
+    async function loadConfig() {
+      const result = await request("GET", "/debug/config");
+
+      document.getElementById("configJson").textContent =
+        JSON.stringify(result.data, null, 2);
+    }
+
+    function pct(x) {
+      return (x * 100).toFixed(1) + "%";
+    }
+
+    async function refreshSignal() {
+      const result = await request("GET", "/signals/latest?instrument=WTI&horizon=5d");
+
+      if (result.ok && result.data.status === "no_signal") {
+        document.getElementById("overviewSignal").textContent = "No signal";
+        document.getElementById("overviewSignal").className = "value warn";
+        document.getElementById("overviewRegime").textContent = "--";
+
+        document.getElementById("signalJson").textContent =
+          JSON.stringify(result.data, null, 2);
+
+        document.getElementById("signalDetail").textContent =
+          JSON.stringify(result.data, null, 2);
+
+        renderBars({});
+        return;
+      }
+
+
+      const s = result.data;
+
+      document.getElementById("overviewSignal").textContent = s.signal || "--";
+      document.getElementById("overviewSignal").className =
+        "value " + (s.signal === "bullish" ? "bullish" : s.signal === "bearish" ? "bearish" : "neutral");
+
+      document.getElementById("overviewRegime").textContent = s.regime || "--";
+
+      document.getElementById("pup").textContent = pct(s.probability_up || 0);
+      document.getElementById("pdown").textContent = pct(s.probability_down || 0);
+      document.getElementById("eret").textContent = pct(s.expected_return || 0);
+      document.getElementById("conf").textContent = pct(s.confidence || 0);
+
+      document.getElementById("signalJson").textContent =
+        JSON.stringify(s, null, 2);
+
+      document.getElementById("signalDetail").textContent =
+        JSON.stringify(s, null, 2);
+
+      renderBars(s.feature_zscores || {});
+    }
+
+    async function refreshFeatures() {
+      const result = await request("GET", "/features/latest");
+
+      document.getElementById("featuresJson").textContent =
+        JSON.stringify(result.data, null, 2);
+    }
+
+    function renderBars(zscores) {
+      const container = document.getElementById("featureBars");
+      container.innerHTML = "";
+
+      const rows = Object.entries(zscores)
+        .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
+        .slice(0, 12);
+
+      if (!rows.length) {
+        container.innerHTML = '<div class="small">No feature z-scores yet.</div>';
+        return;
+      }
+
+      rows.forEach(([name, value]) => {
+        const row = document.createElement("div");
+        row.className = "barrow";
+
+        const label = document.createElement("div");
+        label.className = "small";
+        label.textContent = name;
+
+        const bg = document.createElement("div");
+        bg.className = "barbg";
+
+        const bar = document.createElement("div");
+        bar.className = "bar";
+        bar.style.width = Math.min(Math.abs(value) / 3 * 100, 100) + "%";
+        bar.style.background = value >= 0 ? "var(--green)" : "var(--red)";
+
+        bg.appendChild(bar);
+
+        const val = document.createElement("div");
+        val.textContent = Number(value).toFixed(2);
+
+        row.append(label, bg, val);
+        container.appendChild(row);
+      });
+    }
+
+        function renderFeatureMatrixChartTv(matrix) {
+      if (!matrix || !matrix.rows || !matrix.rows.length) return;
+      
+      const chart = createChart("featureMatrixChartTv");
+      if (!chart) return;
+
+      const features = matrix.features.slice(0, 8); // Top 8 features
+      const colors = ["#4f8cff", "#25d07c", "#ff5c7c", "#ffd166", "#8b5cf6", "#ec4899", "#06b6d4", "#f97316"];
+
+      features.forEach((feature, index) => {
+        const series = chart.addLineSeries({
+          color: colors[index % colors.length],
+          lineWidth: 2,
+          title: feature,
+        });
+
+        const data = matrix.rows
+          .filter(r => r.timestamp)
+          .map(r => ({
+            time: r.timestamp.slice(0, 10),
+            value: Number(r[feature] || 0),
+          }))
+          .sort((a, b) => a.time.localeCompare(b.time));
+
+        series.setData(data);
+      });
+
+      // Add zero line
+      const zeroLine = chart.addLineSeries({
+        color: "#ffffff",
+        lineWidth: 1,
+        lineStyle: 2,
+        title: "Zero",
+      });
+      
+      if (matrix.rows.length > 0) {
+          const t1 = matrix.rows[0].timestamp.slice(0, 10);
+          const t2 = matrix.rows[matrix.rows.length - 1].timestamp.slice(0, 10);
+          zeroLine.setData([{ time: t1, value: 0 }, { time: t2, value: 0 }]);
+      }
+
+      chart.timeScale().fitContent();
+    }
+
+    async function refreshChart() {
+      const result = await request("GET", "/features/matrix");
+
+      if (!result.ok || !result.data.rows || !result.data.rows.length) {
+        const container = document.getElementById("featureMatrixChartTv");
+        if (container) container.innerHTML = '<div class="small" style="padding:20px;">No feature matrix yet. Run ingestion and build features.</div>';
+        return;
+      }
+
+      renderFeatureMatrixChartTv(result.data);
+    }
+
+    function renderFeatureMatrixOld() {
+        // Deprecated
+    }
+
+    function renderEiaTable(rows) {
+      if (!rows || !rows.length) {
+        document.getElementById("eiaTable").innerHTML = "No EIA rows.";
+        return;
+      }
+
+      let html = `
+        <table>
+          <thead>
+            <tr>
+              <th>Metric</th>
+              <th>Signal</th>
+              <th>Current</th>
+              <th>Week Ago</th>
+              <th>WoW</th>
+              <th>Year Ago</th>
+              <th>YoY</th>
+              <th>4W Avg</th>
+              <th>Score</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      rows.forEach(r => {
+        const cls =
+          r.signal === "Bullish" ? "bullish" :
+          r.signal === "Bearish" ? "bearish" : "neutral";
+
+        html += `
+          <tr>
+            <td>${r.metric}</td>
+            <td class="${cls}">${r.signal}</td>
+            <td>${formatNum(r.current)}</td>
+            <td>${formatNum(r.week_ago)}</td>
+            <td>${formatNum(r.wow_change)}</td>
+            <td>${formatNum(r.year_ago)}</td>
+            <td>${formatNum(r.yoy_change)}</td>
+            <td>${formatNum(r.four_week_avg)}</td>
+            <td>${formatNum(r.weighted_score)}</td>
+          </tr>
+        `;
+      });
+
+      html += "</tbody></table>";
+
+      document.getElementById("eiaTable").innerHTML = html;
+    }
+
+    function formatNum(x) {
+      if (x === null || x === undefined || Number.isNaN(Number(x))) {
+        return "--";
+      }
+
+      return Number(x).toLocaleString(undefined, {
+        maximumFractionDigits: 2,
+      });
+    }
+
+    async function refreshAll() {
+      await refreshSignal();
+      await refreshFeatures();
+      await refreshChart();
+      await loadConfig();
+      await refreshEiaRefineryChart();
+    }
+
+    function setEiaProgress(value, message = null) {
+      const bar = document.getElementById("eiaUpdateProgress");
+      const status = document.getElementById("eiaUpdateStatus");
+
+      if (bar) {
+        bar.style.width = Math.max(0, Math.min(100, value)) + "%";
+      }
+
+      if (message && status) {
+        status.textContent = message;
+      }
+    }
+
+    async function runEiaPdfReport() {
+      setEiaProgress(15, "Parsing EIA PDF report...");
+
+      const result = await request("POST", "/eia/pdf/run");
+
+      if (!result.ok) {
+        setEiaProgress(100, "EIA PDF parsing failed. Check Logs tab.");
+        return result;
+      }
+
+      renderEiaTable(result.data.latest || []);
+      updateRefineryKpisFromRows(result.data.latest || []);
+
+      setEiaProgress(100, "EIA PDF report parsed successfully.");
+
+      return result;
+    }
+
+    async function updateEiaTab() {
+      setEiaProgress(0, "Starting EIA weekly update...");
+      log("EIA tab auto update started");
+
+      setEiaProgress(20, "Ingesting latest EIA PDF into SQLite...");
+      const ingest = await request("POST", "/ingest/eia");
+
+      if (!ingest.ok) {
+        setEiaProgress(100, "EIA ingestion failed. Check logs.");
+        log("EIA ingestion failed during tab update", ingest.data, "error");
+        return;
+      }
+
+      setEiaProgress(45, "Parsing latest EIA PDF report...");
+      const report = await request("POST", "/eia/pdf/run");
+
+      if (!report.ok) {
+        setEiaProgress(100, "EIA report parse failed. Check logs.");
+        log("EIA report parse failed during tab update", report.data, "error");
+        return;
+      }
+
+      renderEiaTable(report.data.latest || []);
+      updateRefineryKpisFromRows(report.data.latest || []);
+
+      setEiaProgress(70, "Building standardized features...");
+      const features = await request("POST", "/features/build");
+
+      if (!features.ok) {
+        log("Feature build failed during EIA tab update", features.data, "error");
+      }
+
+      setEiaProgress(85, "Refreshing refinery utilization chart...");
+      await refreshEiaRefineryChart();
+
+      setEiaProgress(100, "EIA tab update complete.");
+      log("EIA tab auto update completed", null, "success");
+    }
+
+    function updateRefineryKpisFromRows(rows) {
+      const row = rows.find(x => x.metric === "refinery_utilization");
+
+      if (!row) {
+        document.getElementById("latestRefineryUtilization").textContent = "--";
+        document.getElementById("latestRefineryUtilizationWow").textContent = "--";
+        document.getElementById("latestRefineryUtilization4w").textContent = "--";
+        document.getElementById("latestRefineryUtilizationSignal").textContent = "--";
+        return;
+      }
+
+      document.getElementById("latestRefineryUtilization").textContent =
+        formatNum(row.current) + "%";
+
+      document.getElementById("latestRefineryUtilizationWow").textContent =
+        formatNum(row.wow_change) + " pts";
+
+      document.getElementById("latestRefineryUtilization4w").textContent =
+        row.four_week_avg === null || row.four_week_avg === undefined
+          ? "--"
+          : formatNum(row.four_week_avg) + "%";
+
+      const sig = document.getElementById("latestRefineryUtilizationSignal");
+      sig.textContent = row.signal || "--";
+      sig.className =
+        "value " +
+        (row.signal === "Bullish" ? "bullish" :
+         row.signal === "Bearish" ? "bearish" :
+         "neutral");
+    }
+
+        function renderEiaRefineryChartTv(rows) {
+      if (!rows || !rows.length) return;
+      
+      const chart = createChart("refineryUtilizationChartTv");
+      if (!chart) return;
+
+      const series = chart.addLineSeries({
+        color: "#4f8cff",
+        lineWidth: 3,
+        title: "Refinery Utilization %",
+      });
+
+      // Add baseline at 85%
+      const baselineSeries = chart.addLineSeries({
+        color: "#ffd166",
+        lineWidth: 1,
+        lineStyle: 2,
+        title: "85% Baseline",
+      });
+
+      const data = mapToSeries(rows, "value");
+      series.setData(data);
+
+      if (data.length > 0) {
+        const t1 = data[0].time;
+        const t2 = data[data.length - 1].time;
+        baselineSeries.setData([{ time: t1, value: 85 }, { time: t2, value: 85 }]);
+      }
+
+      // Add markers for each point to match the previous "circles" look
+      series.setMarkers(data.map(d => ({
+        time: d.time,
+        position: "inBar",
+        color: "#25d07c",
+        shape: "circle",
+        size: 0.5,
+      })));
+
+      chart.timeScale().fitContent();
+    }
+
+    async function refreshEiaRefineryChart() {
+      const result = await request("GET", "/eia/history?metric=refinery_utilization&limit=260");
+
+      if (!result.ok || !result.data.rows || !result.data.rows.length) {
+        const container = document.getElementById("refineryUtilizationChartTv");
+        if (container) container.innerHTML = '<div class="small" style="padding:20px;">No refinery utilization history yet. Click Fetch Latest EIA + Update Tab.</div>';
+        return;
+      }
+
+      const rows = result.data.rows;
+      const latest = rows[rows.length - 1];
+      const values = rows.map(r => Number(r.value));
+
+      document.getElementById("latestRefineryUtilization").textContent =
+        formatNum(latest.value) + "%";
+
+      const latestMeta = latest.metadata || {};
+
+      document.getElementById("latestRefineryUtilizationWow").textContent =
+        latestMeta.wow_change === null || latestMeta.wow_change === undefined
+          ? "--"
+          : formatNum(latestMeta.wow_change) + " pts";
+
+      document.getElementById("latestRefineryUtilization4w").textContent =
+        latestMeta.four_week_avg === null || latestMeta.four_week_avg === undefined
+          ? "--"
+          : formatNum(latestMeta.four_week_avg) + "%";
+
+      const sig = document.getElementById("latestRefineryUtilizationSignal");
+      sig.textContent = latestMeta.signal || "--";
+      sig.className =
+        "value " +
+        (latestMeta.signal === "Bullish" ? "bullish" :
+         latestMeta.signal === "Bearish" ? "bearish" :
+         "neutral");
+
+      renderEiaRefineryChartTv(rows);
+    }
+
+    function renderEiaRefineryChartOld(rows) {
+      // Deprecated
+    }
+
+    async function debugEiaPdf() {
+      const result = await request("GET", "/debug/eia/pdf");
+
+      document.getElementById("eiaDebugJson").textContent =
+        JSON.stringify(result.data, null, 2);
+
+      if (result.ok) {
+        log("EIA PDF debug loaded", result.data, "success");
+      } else {
+        log("EIA PDF debug failed", result.data, "error");
+      }
+    }
+
+    async function loadAppLogs() {
+      const result = await request("GET", "/debug/logs/app?lines=300");
+
+      document.getElementById("appLogsJson").textContent =
+        JSON.stringify(result.data, null, 2);
+
+      if (result.ok) {
+        log("App logs loaded", null, "success");
+      } else {
+        log("App logs failed", result.data, "error");
+      }
+    }
+
+    async function loadEiaLogs() {
+      const result = await request("GET", "/debug/logs/eia?lines=300");
+
+      document.getElementById("eiaLogsJson").textContent =
+        JSON.stringify(result.data, null, 2);
+
+      if (result.ok) {
+        log("EIA logs loaded", null, "success");
+      } else {
+        log("EIA logs failed", result.data, "error");
+      }
+    }
+
+    async function debugQuantHubAuth() {
+      const result = await request("GET", "/debug/quanthub/auth");
+      log("QuantHub auth debug result", result.data, result.ok ? "success" : "error");
+    }
+
+    async function debugQuantHubEndpoint(endpointKey) {
+      const result = await request("GET", "/debug/quanthub/endpoint?endpoint_key=" + endpointKey);
+      log("QuantHub endpoint debug result: " + endpointKey, result.data, result.ok ? "success" : "error");
+    }
+
+    async function ingestQuantHubOhlcV2() {
+      const instruments = document.getElementById("qhInstruments").value.trim();
+      const interval = document.getElementById("qhInterval").value;
+
+      if (!instruments) {
+        log("QuantHub OHLC requires QH instruments", null, "warn");
+        return;
+      }
+
+      const url =
+        "/ingest/quanthub/ohlc-v2?instruments=" +
+        encodeURIComponent(instruments) +
+        "&interval=" +
+        encodeURIComponent(interval) +
+        "&count=50";
+
+      const result = await request("POST", url);
+
+      log(
+        "QuantHub OHLC v2 ingestion result",
+        result.data,
+        result.ok ? "success" : "error"
+      );
+
+      await refreshAll();
+    }
+
+    async function ingestQuantHubFairValue() {
+      const result = await request(
+        "POST",
+        "/ingest/quanthub/fairvalue-v2?products=*"
+      );
+
+      log(
+        "QuantHub FairValue ingestion result",
+        result.data,
+        result.ok ? "success" : "error"
+      );
+
+      await refreshAll();
+    }
+
+    // COT Petroleum Functions
+    function setCotProgress(value, message = null) {
+      const bar = document.getElementById("cotProgress");
+      const status = document.getElementById("cotStatus");
+
+      if (bar) {
+        bar.style.width = Math.max(0, Math.min(100, value)) + "%";
+      }
+
+      if (message && status) {
+        status.textContent = message;
+      }
+    }
+
+    async function ingestCotPetroleum() {
+      const mode = document.getElementById("cotMode").value;
+
+      setCotProgress(10, "Fetching CFTC COT Petroleum report...");
+
+      const result = await request(
+        "POST",
+        "/ingest/cot/petroleum?mode=" + encodeURIComponent(mode)
+      );
+
+      document.getElementById("cotJson").textContent =
+        JSON.stringify(result.data, null, 2);
+
+      if (!result.ok) {
+        setCotProgress(100, "COT ingestion failed.");
+        log("COT ingestion failed", result.data, "error");
+        return;
+      }
+
+      setCotProgress(65, "COT ingestion complete. Loading history...");
+
+      await refreshCotPetroleum();
+
+      setCotProgress(100, "COT Petroleum dashboard updated.");
+
+      log("COT Petroleum ingestion successful", result.data, "success");
+    }
+
+    async function refreshCotPetroleum() {
+      const contract =
+        document.getElementById("cotContract").value.trim() || "WTI";
+
+      setCotProgress(20, "Loading COT Petroleum history...");
+
+      const historyResult = await request(
+        "GET",
+        "/cot/petroleum/history?contract_contains=" +
+          encodeURIComponent(contract) +
+          "&limit=260"
+      );
+
+      document.getElementById("cotJson").textContent =
+        JSON.stringify(historyResult.data, null, 2);
+
+            if (
+        !historyResult.ok ||
+        historyResult.data.status !== "success" ||
+        !historyResult.data.wide ||
+        !historyResult.data.wide.length
+      ) {
+        setCotProgress(100, "No COT Petroleum data found.");
+        clearCotKpis();
+        const cotContainer = document.getElementById("cotChartTv");
+        if (cotContainer) cotContainer.innerHTML = '<div class="small" style="padding:20px;">No COT history yet.</div>';
+        const cotZContainer = document.getElementById("cotZChartTv");
+        if (cotZContainer) cotZContainer.innerHTML = '';
+        
+        document.getElementById("cotTable").innerHTML =
+          "No COT data loaded yet.";
+        document.getElementById("cotSignalBox").innerHTML =
+          "No COT signal data loaded yet.";
+
+        log("COT history empty or failed", historyResult.data, "warn");
+        return;
+      }
+
+            updateCotKpis(historyResult.data.latest || {});
+      updateCotInterpretation(historyResult.data.latest || {});
+      renderCotTable(historyResult.data.wide || []);
+      // Use new cross-sectional visualization for single-date COT data
+      renderCotTradingViewCharts(historyResult.data.wide || []);
+
+      setCotProgress(70, "Loading COT Petroleum signals...");
+
+      const signalResult = await request(
+        "GET",
+        "/cot/petroleum/signals?contract_contains=" +
+          encodeURIComponent(contract)
+      );
+
+      if (signalResult.ok && signalResult.data.status === "success") {
+        renderCotSignals(signalResult.data.latest || {});
+      } else {
+        document.getElementById("cotSignalBox").innerHTML =
+          "No COT signal data available.";
+      }
+
+      setCotProgress(100, "COT Petroleum loaded.");
+
+      log("COT Petroleum history refreshed", historyResult.data, "success");
+    }
+
+    function clearCotKpis() {
+      document.getElementById("cotOpenInterest").textContent = "--";
+      document.getElementById("cotMmNet").textContent = "--";
+      document.getElementById("cotMmNetPct").textContent = "--";
+      document.getElementById("cotDealerVsSpec").textContent = "--";
+    }
+
+    function updateCotKpis(latest) {
+      document.getElementById("cotOpenInterest").textContent =
+        latest.open_interest === undefined || latest.open_interest === null
+          ? "--"
+          : formatNum(latest.open_interest);
+
+      document.getElementById("cotMmNet").textContent =
+        latest.mm_net === undefined || latest.mm_net === null
+          ? "--"
+          : formatNum(latest.mm_net);
+
+      document.getElementById("cotMmNetPct").textContent =
+        latest.mm_net_pct_oi === undefined || latest.mm_net_pct_oi === null
+          ? "--"
+          : formatNum(latest.mm_net_pct_oi * 100) + "%";
+
+      document.getElementById("cotDealerVsSpec").textContent =
+        latest.dealer_vs_spec === undefined || latest.dealer_vs_spec === null
+          ? "--"
+          : formatNum(latest.dealer_vs_spec);
+    }
+
+    function renderCotSignals(latest) {
+      const mmZ =
+        latest.mm_net_z === undefined || latest.mm_net_z === null
+          ? null
+          : Number(latest.mm_net_z);
+
+      const dealerZ =
+        latest.dealer_vs_spec_z === undefined || latest.dealer_vs_spec_z === null
+          ? null
+          : Number(latest.dealer_vs_spec_z);
+
+      const mmFlow =
+        latest.mm_net_change_4w === undefined || latest.mm_net_change_4w === null
+          ? null
+          : Number(latest.mm_net_change_4w);
+
+      let mmText = "Neutral positioning";
+      let mmClass = "small";
+
+      if (mmZ !== null) {
+        if (mmZ > 2) {
+          mmText = "Crowded long positioning";
+          mmClass = "value warn";
+        } else if (mmZ < -2) {
+          mmText = "Crowded short positioning";
+          mmClass = "value warn";
+        } else if (mmZ > 0.75) {
+          mmText = "Bullish speculative tilt";
+          mmClass = "value good";
+        } else if (mmZ < -0.75) {
+          mmText = "Bearish speculative tilt";
+          mmClass = "value bad";
+        }
+      }
+
+      document.getElementById("cotSignalBox").innerHTML = `
+        <div class="grid">
+          <div class="kpi">
+            <div class="label">MM Net Z-score</div>
+            <div class="${mmClass}">${mmZ === null ? "--" : formatNum(mmZ)}</div>
+            <div class="small">${mmText}</div>
+          </div>
+
+          <div class="kpi">
+            <div class="label">4W MM Net Change</div>
+            <div class="value">${mmFlow === null ? "--" : formatNum(mmFlow)}</div>
+            <div class="small">Weekly positioning flow proxy</div>
+          </div>
+
+          <div class="kpi">
+            <div class="label">Dealer vs Spec Z</div>
+            <div class="value">${dealerZ === null ? "--" : formatNum(dealerZ)}</div>
+            <div class="small">Swap dealer vs managed money divergence</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderCotTable(rows) {
+      if (!rows || !rows.length) {
+        document.getElementById("cotTable").innerHTML =
+          "No COT data loaded yet.";
+        return;
+      }
+
+      let html = `
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Contract</th>
+              <th>Open Interest</th>
+              <th>MM Long</th>
+              <th>MM Short</th>
+              <th>MM Net</th>
+              <th>MM Net % OI</th>
+              <th>Swap Net</th>
+              <th>Producer Net</th>
+              <th>Dealer vs Spec</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      rows.slice().reverse().forEach(row => {
+        html += `
+          <tr>
+            <td>${row.timestamp || "--"}</td>
+            <td>${row.contract || "--"}</td>
+            <td>${formatNum(row.open_interest)}</td>
+            <td>${formatNum(row.mm_long)}</td>
+            <td>${formatNum(row.mm_short)}</td>
+            <td>${formatNum(row.mm_net)}</td>
+            <td>${
+              row.mm_net_pct_oi === undefined || row.mm_net_pct_oi === null
+                ? "--"
+                : formatNum(row.mm_net_pct_oi * 100) + "%"
+            }</td>
+            <td>${formatNum(row.swap_net)}</td>
+            <td>${formatNum(row.producer_net)}</td>
+            <td>${formatNum(row.dealer_vs_spec)}</td>
+          </tr>
+        `;
+      });
+
+      html += `
+          </tbody>
+        </table>
+      `;
+
+      document.getElementById("cotTable").innerHTML = html;
+    }
+
+        function renderCotChart(rows) {
+      // Deprecated: replaced by renderCotTradingViewChart
+    }
+
+    // --- COT Cross-Sectional Visualization (Phase 6) ---
+
+    function getTopCotContracts(rows, metric, limit = 10) {
+      return rows
+        .filter(r => r[metric] !== undefined && r[metric] !== null)
+        .map(r => ({
+          contract: r.contract || "Unknown",
+          value: Number(r[metric]),
+          open_interest: Number(r.open_interest || 0),
+          mm_net: Number(r.mm_net || 0),
+          dealer_vs_spec: Number(r.dealer_vs_spec || 0),
+          mm_net_pct_oi: Number(r.mm_net_pct_oi || 0),
+        }))
+        .sort((a, b) => Math.abs(b.value) - Math.abs(a.value))
+        .slice(0, limit);
+    }
+
+    function renderCotLeaderboard(rows) {
+      const el = document.getElementById("cotLeaderboard");
+
+      if (!el) return;
+
+      if (!rows || !rows.length) {
+        el.innerHTML = "No COT data loaded yet.";
+        return;
+      }
+
+      const ranked = getTopCotContracts(rows, "mm_net", 12);
+
+      let html = `
+        <div class="leaderboard-row header">
+          <div>Contract</div>
+          <div>MM Net</div>
+          <div>MM Net % OI</div>
+          <div>Dealer vs Spec</div>
+        </div>
+      `;
+
+      ranked.forEach(item => {
+        const mmClass = item.mm_net >= 0 ? "positive" : "negative";
+        const dealerClass = item.dealer_vs_spec >= 0 ? "positive" : "negative";
+
+        html += `
+          <div class="leaderboard-row">
+            <div>${shortenContractName(item.contract)}</div>
+            <div class="${mmClass}">${formatNum(item.mm_net)}</div>
+            <div>${formatNum(item.mm_net_pct_oi * 100)}%</div>
+            <div class="${dealerClass}">${formatNum(item.dealer_vs_spec)}</div>
+          </div>
+        `;
+      });
+
+      el.innerHTML = html;
+    }
+
+    function renderCotMetricHistogram(containerId, rows, metric, colorPositive, colorNegative) {
+      destroyTvChart(containerId);
+
+      const container = document.getElementById(containerId);
+
+      if (!container) return;
+
+      if (!rows || !rows.length) {
+        container.innerHTML = "No COT data.";
+        return;
+      }
+
+      const ranked = getTopCotContracts(rows, metric, 12);
+
+      const baseTime = Math.floor(new Date("2026-01-01T00:00:00Z").getTime() / 1000);
+
+      const data = ranked.map((item, index) => ({
+        time: baseTime + index * 86400,
+        value: item.value,
+        color: item.value >= 0 ? colorPositive : colorNegative,
+      }));
+
+      const chart = createBaseTvChart(containerId, 260);
+
+      if (!chart) return;
+
+      const series = chart.addHistogramSeries({
+        priceFormat: {
+          type: "volume",
+        },
+        base: 0,
+      });
+
+      series.setData(data);
+
+      chart.timeScale().fitContent();
+
+      tvCharts[containerId] = chart;
+
+      // Add simple label overlay below the chart
+      const labels = document.createElement("div");
+      labels.className = "small";
+      labels.style.marginTop = "8px";
+      labels.innerHTML = ranked
+        .map((x, i) => `${i + 1}. ${shortenContractName(x.contract)}`)
+        .join(" &nbsp; | &nbsp; ");
+
+      container.appendChild(labels);
+    }
+
+    function shortenContractName(name) {
+      if (!name) return "--";
+
+      return name
+        .replace(" - NEW YORK MERCANTILE EXCHANGE", "")
+        .replace(" - ICE FUTURES ENERGY DIV", "")
+        .replace("Code-", "#")
+        .slice(0, 42);
+    }
+
+    function renderCotTradingViewCharts(rows) {
+      // Cross-sectional histograms for single-date COT data
+      renderCotMetricHistogram(
+        "cotMmNetChart",
+        rows,
+        "mm_net",
+        "rgba(37, 208, 124, 0.75)",
+        "rgba(255, 92, 122, 0.75)"
+      );
+
+      renderCotMetricHistogram(
+        "cotDealerChart",
+        rows,
+        "dealer_vs_spec",
+        "rgba(37, 208, 124, 0.75)",
+        "rgba(255, 176, 32, 0.75)"
+      );
+
+      renderCotLeaderboard(rows);
+    }
+
+    function updateCotInterpretation(latest) {
+      const mmPct = Number(latest.mm_net_pct_oi || 0);
+      const swapPct = Number(latest.swap_net_pct_oi || 0);
+      const producerPct = Number(latest.producer_net_pct_oi || 0);
+
+      const interpEl = document.getElementById("cotInterpretation");
+      const crowdEl = document.getElementById("cotCrowding");
+      const swapEl = document.getElementById("cotSwapPressure");
+      const prodEl = document.getElementById("cotProducerBias");
+
+      if (interpEl) {
+        interpEl.textContent =
+          mmPct > 0.08
+            ? "Spec Long"
+            : mmPct < -0.08
+            ? "Spec Short"
+            : "Neutral";
+        interpEl.className = "interp-value " + (mmPct > 0.08 ? "bullish" : mmPct < -0.08 ? "bearish" : "neutral");
+      }
+
+      if (crowdEl) {
+        crowdEl.textContent =
+          Math.abs(mmPct) > 0.12
+            ? "High"
+            : Math.abs(mmPct) > 0.06
+            ? "Medium"
+            : "Low";
+        crowdEl.className = "interp-value " + (Math.abs(mmPct) > 0.12 ? "warn" : "neutral");
+      }
+
+      if (swapEl) {
+        swapEl.textContent =
+          swapPct < -0.15
+            ? "Swap Short"
+            : swapPct > 0.15
+            ? "Swap Long"
+            : "Neutral";
+        swapEl.className = "interp-value " + (swapPct < -0.15 ? "bearish" : swapPct > 0.15 ? "bullish" : "neutral");
+      }
+
+      if (prodEl) {
+        prodEl.textContent =
+          producerPct > 0.1
+            ? "Producer Net Long"
+            : producerPct < -0.1
+            ? "Producer Net Short"
+            : "Neutral";
+        prodEl.className = "interp-value " + (producerPct > 0.1 ? "bullish" : producerPct < -0.1 ? "bearish" : "neutral");
+      }
+    }
+
+    async function copyCotJsonToClipboard() {
+      const text = document.getElementById("cotJson").textContent;
+
+      if (!text || !text.trim() || text === "No request made yet.") {
+        log("No COT JSON available to copy.", null, "warn");
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(text);
+        log("COT JSON copied to clipboard.", null, "success");
+      } catch (error) {
+        log("Failed to copy COT JSON to clipboard.", error, "error");
+      }
+    }
+
+    async function boot() {
+      log("Dashboard boot started");
+      await loadHealth();
+      await checkDb();
+      await refreshAll();
+      log("Dashboard boot completed", null, "success");
+    }
+
+    boot();
+  </script>
+</body>
+</html>

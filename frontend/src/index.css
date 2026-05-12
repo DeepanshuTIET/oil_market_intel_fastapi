@@ -1,0 +1,156 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import "tailwindcss";
+
+/* ============================================================
+   Oil Market Intelligence — Design System
+   Bloomberg Terminal meets modern SaaS
+   ============================================================ */
+
+@theme {
+  --color-bg-primary: #080d1a;
+  --color-bg-secondary: #0d1426;
+  --color-bg-card: #121a2f;
+  --color-bg-card-alt: #0e1628;
+  --color-bg-elevated: #17213a;
+  --color-bg-input: #0a1020;
+
+  --color-border: #1e2b45;
+  --color-border-light: #25304a;
+
+  --color-text-primary: #eef3ff;
+  --color-text-secondary: #9aa8c7;
+  --color-text-muted: #7a8baa;
+  --color-text-dim: #4a5a7a;
+
+  --color-accent-blue: #4f8cff;
+  --color-accent-green: #22c55e;
+  --color-accent-red: #ef4444;
+  --color-accent-amber: #f59e0b;
+  --color-accent-purple: #8b5cf6;
+  --color-accent-cyan: #06b6d4;
+
+  --color-bullish: #22c55e;
+  --color-bearish: #ef4444;
+  --color-neutral: #f59e0b;
+
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-full: 9999px;
+}
+
+
+/* Base resets */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: var(--radius-full);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-dim);
+}
+
+/* Selection */
+::selection {
+  background: rgba(79, 140, 255, 0.3);
+  color: var(--color-text-primary);
+}
+
+/* Focus ring */
+:focus-visible {
+  outline: 2px solid var(--color-accent-blue);
+  outline-offset: 2px;
+}
+
+/* Custom utilities */
+@utility glass {
+  background: rgba(18, 26, 47, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+@utility glow-blue {
+  box-shadow: 0 0 20px rgba(79, 140, 255, 0.15);
+}
+
+@utility glow-green {
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.15);
+}
+
+@utility glow-red {
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.15);
+}
+
+/* Animations */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent 0%, rgba(79, 140, 255, 0.06) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out;
+}
+
+.animate-slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+.animate-pulse-dot {
+  animation: pulse-dot 2s ease-in-out infinite;
+}

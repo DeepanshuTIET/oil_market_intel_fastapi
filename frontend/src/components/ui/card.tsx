@@ -16,15 +16,15 @@ export function Card({ title, subtitle, children, className, headerRight, noPadd
       className
     )}>
       {(title || headerRight) && (
-        <div className="flex items-center justify-between px-5 pt-4 pb-2">
+        <div className="flex items-center justify-between px-6 pt-6 pb-4">
           <div>
-            {title && <h3 className="text-base font-bold text-text-primary">{title}</h3>}
-            {subtitle && <p className="text-xs text-text-muted mt-0.5">{subtitle}</p>}
+            {title && <h3 className="text-lg font-bold text-text-primary tracking-tight">{title}</h3>}
+            {subtitle && <p className="text-sm text-text-muted mt-1">{subtitle}</p>}
           </div>
           {headerRight}
         </div>
       )}
-      <div className={cn(noPadding ? '' : 'px-5 pb-5', !title && !headerRight && !noPadding && 'pt-5')}>
+      <div className={cn(noPadding ? '' : 'px-6 pb-6', !title && !headerRight && !noPadding && 'pt-6')}>
         {children}
       </div>
     </div>

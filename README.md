@@ -123,6 +123,10 @@ Signals can optionally be pushed to Microsoft Teams via webhook for real-time al
 | Layer | Technology | Version |
 |---|---|---|
 | **Web framework** | FastAPI + Uvicorn | 0.115.6 / 0.34.0 |
+| **Frontend Framework** | React + TypeScript + Vite | 19 / 5.7 / 8.0 |
+| **Styling** | TailwindCSS | v4.0 |
+| **Frontend State** | TanStack React Query | 5.66 |
+| **Charts** | Lightweight Charts + Recharts | 5.2 / 2.15 |
 | **Validation** | Pydantic + pydantic-settings | 2.10.4 / 2.7.1 |
 | **ORM** | SQLAlchemy | 2.0.36 |
 | **Data processing** | Pandas + NumPy | 2.2.3 / 2.2.1 |
@@ -194,22 +198,31 @@ oil_market_intel_fastapi/
 │   ├── static/
 │   │   └── index.html                 # Interactive dashboard (single-page, ~79KB)
 │   └── tests/                         # App-level tests (placeholder)
+├── frontend/                    # React SPA Frontend
+│   ├── src/                       # TypeScript/React source code
+│   │   ├── components/            # Reusable UI components & charts
+│   │   ├── pages/                 # Dashboard pages (Overview, EIA, etc)
+│   │   ├── hooks/                 # React Query data fetching hooks
+│   │   └── types/                 # TypeScript interfaces mapped to API schemas
+│   ├── package.json               # Node.js dependencies
+│   ├── vite.config.ts             # Vite build configuration (outputs to app/static)
+│   └── index.html                 # Frontend entry point
 ├── sql/
-│   └── init.sql                       # TimescaleDB bootstrap (4 hypertables)
+│   └── init.sql                   # TimescaleDB bootstrap (4 hypertables)
 ├── eia_weekly_output/
-│   ├── raw/                           # Downloaded WPSR PDF files
-│   └── processed/                     # Parsed EIA outputs (JSON/CSV/XLSX)
-├── logs/                              # Runtime log files (auto-created)
+│   ├── raw/                       # Downloaded WPSR PDF files
+│   └── processed/                 # Parsed EIA outputs (JSON/CSV/XLSX)
+├── logs/                          # Runtime log files (auto-created)
 ├── tests/
-│   └── test_transforms.py             # Transform unit tests
-├── .env.example                       # Environment variable template
+│   └── test_transforms.py         # Transform unit tests
+├── .env.example                   # Environment variable template
 ├── .gitignore
-├── cache_delete.py                    # __pycache__ cleanup utility
-├── Dockerfile                         # Python 3.11-slim container
-├── docker-compose.yml                 # API + TimescaleDB services
-├── main.py                            # Local development runner (uvicorn)
-├── requirements.txt                   # Pinned Python dependencies
-└── README.md                          # This file
+├── cache_delete.py                # __pycache__ cleanup utility
+├── Dockerfile                     # Python 3.11-slim container
+├── docker-compose.yml             # API + TimescaleDB services
+├── main.py                        # Local development runner (uvicorn)
+├── requirements.txt               # Pinned Python dependencies
+└── README.md                      # This file
 ```
 
 ---
@@ -317,9 +330,12 @@ Copy-Item .env.example .env
 ### Prerequisites
 
 - Python 3.11+
+- Node.js 18+ (for frontend development)
 - Docker & Docker Compose (optional, for containerized deployment)
 
 ### Local Development
+
+#### 1. Backend Setup
 
 ```bash
 # 1. Create and activate virtual environment
@@ -348,6 +364,32 @@ python main.py
 ```
 
 The app auto-creates SQLite tables on first startup.
+
+#### 2. Frontend Setup
+
+The application features a modern React SPA located in the `frontend/` directory.
+
+```bash
+cd frontend
+
+# 1. Install Node.js dependencies
+npm install
+
+# 2. Start the Vite development server (with hot reload)
+npm run dev
+# The frontend will run at http://localhost:5173/static/
+# API calls are automatically proxied to the FastAPI backend at http://localhost:8000
+```
+
+#### 3. Building for Production
+
+To create a production build of the frontend that FastAPI will serve directly:
+
+```bash
+cd frontend
+npm run build
+```
+This command compiles the React application and outputs the production-ready HTML, JS, and CSS to the `app/static/` directory. FastAPI serves this directory at the `/dashboard` route.
 
 ### Docker Deployment
 

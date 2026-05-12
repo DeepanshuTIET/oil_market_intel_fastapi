@@ -57,7 +57,7 @@ export function OverviewPage() {
   const hasSignal = signal?.status === 'success' && signal.signal !== 'not_available';
 
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="space-y-5">
+    <motion.div variants={container} initial="hidden" animate="show" className="space-y-8">
       {/* KPI Row */}
       <motion.div variants={item} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {signalLoading ? (

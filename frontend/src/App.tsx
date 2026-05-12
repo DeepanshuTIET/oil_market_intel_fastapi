@@ -58,10 +58,10 @@ function AppLayout() {
       />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <TopBar />
-        <main className="flex-1 overflow-y-auto p-6">
-          <div className="mb-5">
-            <h2 className="text-xl font-extrabold tracking-tight">{PAGE_TITLES[activePage]}</h2>
-            <p className="text-xs text-text-muted mt-0.5">Oil Market Intelligence — Real-time Analytics</p>
+        <main className="flex-1 overflow-y-auto p-8">
+          <div className="mb-7">
+            <h2 className="text-2xl font-extrabold tracking-tight">{PAGE_TITLES[activePage]}</h2>
+            <p className="text-sm text-text-muted mt-1">Oil Market Intelligence — Real-time Analytics</p>
           </div>
           <AnimatePresence mode="wait">
             <motion.div

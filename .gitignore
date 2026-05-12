@@ -235,3 +235,26 @@ target/
 # Flask
 instance/
 .webassets-cache
+
+# ============================================================
+# Project-Specific: Frontend (React / Vite)
+# ============================================================
+
+# Dependencies
+frontend/node_modules/
+
+# Production Build
+# Note: Vite builds to app/static, but we'll ignore standard vite dirs just in case
+frontend/dist/
+frontend/build/
+
+# Vite caches
+frontend/.vite/
+
+# TypeScript
+frontend/*.tsbuildinfo
+
+# Frontend env files
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local

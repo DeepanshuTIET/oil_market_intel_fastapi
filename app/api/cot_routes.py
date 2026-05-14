@@ -1,6 +1,9 @@
 import logging
+import math
 import traceback
+from typing import Any
 
+import numpy as np
 import pandas as pd
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
@@ -23,6 +26,38 @@ from app.services.repository import upsert_raw
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["COT"])
+
+
+def _json_safe_value(v: Any) -> Any:
+    """Coerce NaN/Inf and numpy scalars so JSON clients never see invalid floats."""
+    if v is None:
+        return None
+    if isinstance(v, (float, np.floating)):
+        x = float(v)
+        if math.isnan(x) or math.isinf(x):
+            return None
+        return x
+    if isinstance(v, np.integer):
+        return int(v)
+    if isinstance(v, np.bool_):
+        return bool(v)
+    return v
+
+
+def _sanitize_json_obj(obj: Any) -> Any:
+    if isinstance(obj, dict):
+        return {k: _sanitize_json_obj(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_sanitize_json_obj(v) for v in obj]
+    return _json_safe_value(obj)
+
+
+def _rolling_z(series: pd.Series, window: int = 52, min_periods: int = 10) -> pd.Series:
+    mean = series.rolling(window, min_periods=min_periods).mean()
+    std = series.rolling(window, min_periods=min_periods).std()
+    z = (series - mean) / std
+    z = z.mask((std == 0) | std.isna())
+    return z.replace([np.inf, -np.inf], np.nan)
 
 
 def db_error_response(e: Exception):
@@ -340,23 +375,20 @@ def get_cot_petroleum_signals(
     df = pd.DataFrame(rows)
 
     if "mm_net" in df.columns:
-        df["mm_net_z"] = (
-            df["mm_net"] - df["mm_net"].rolling(52, min_periods=10).mean()
-        ) / df["mm_net"].rolling(52, min_periods=10).std()
+        df["mm_net_z"] = _rolling_z(df["mm_net"])
 
     if "mm_net" in df.columns:
         df["mm_net_change_4w"] = df["mm_net"].diff(4)
 
     if "dealer_vs_spec" in df.columns:
-        df["dealer_vs_spec_z"] = (
-            df["dealer_vs_spec"] - df["dealer_vs_spec"].rolling(52, min_periods=10).mean()
-        ) / df["dealer_vs_spec"].rolling(52, min_periods=10).std()
+        df["dealer_vs_spec_z"] = _rolling_z(df["dealer_vs_spec"])
 
-    latest = df.tail(1).to_dict("records")[0]
+    latest = _sanitize_json_obj(df.tail(1).to_dict("records")[0])
+    rows = _sanitize_json_obj(df.tail(100).to_dict("records"))
 
     return {
         "status": "success",
         "contract_contains": contract_contains,
         "latest": latest,
-        "rows": df.tail(100).to_dict("records"),
+        "rows": rows,
     }

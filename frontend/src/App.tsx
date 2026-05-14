@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Sidebar, type PageId } from '@/components/layout/sidebar';
@@ -10,6 +10,7 @@ import { CotPage } from '@/pages/cot';
 import { FeaturesPage } from '@/pages/features';
 import { SignalsPage } from '@/pages/signals';
 import { DebugPage } from '@/pages/debug';
+import { isDebugUiEnabled } from '@/lib/debug-ui';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -34,17 +35,32 @@ const PAGE_TITLES: Record<PageId, string> = {
 function AppLayout() {
   const [activePage, setActivePage] = useState<PageId>('overview');
   const [collapsed, setCollapsed] = useState(false);
+  const showDebug = isDebugUiEnabled();
+
+  useEffect(() => {
+    if (!showDebug && activePage === 'debug') {
+      setActivePage('overview');
+    }
+  }, [showDebug, activePage]);
 
   const renderPage = () => {
     switch (activePage) {
-      case 'overview': return <OverviewPage />;
-      case 'eia': return <EiaPage />;
-      case 'quanthub': return <QuantHubPage />;
-      case 'cot': return <CotPage />;
-      case 'features': return <FeaturesPage />;
-      case 'signals': return <SignalsPage />;
-      case 'debug': return <DebugPage />;
-      default: return <OverviewPage />;
+      case 'overview':
+        return <OverviewPage />;
+      case 'eia':
+        return <EiaPage />;
+      case 'quanthub':
+        return <QuantHubPage />;
+      case 'cot':
+        return <CotPage />;
+      case 'features':
+        return <FeaturesPage />;
+      case 'signals':
+        return <SignalsPage />;
+      case 'debug':
+        return showDebug ? <DebugPage /> : <OverviewPage />;
+      default:
+        return <OverviewPage />;
     }
   };
 
@@ -55,6 +71,7 @@ function AppLayout() {
         onNavigate={setActivePage}
         collapsed={collapsed}
         onToggleCollapse={() => setCollapsed(!collapsed)}
+        showDebug={showDebug}
       />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <TopBar />

@@ -13,17 +13,17 @@ interface KpiCardProps {
 export function KpiCard({ label, value, className, valueClassName, icon, subtitle }: KpiCardProps) {
   return (
     <div className={cn(
-      'rounded-2xl border border-border bg-bg-input p-6 flex flex-col gap-3 transition-all duration-200 hover:border-border-light',
+      'rounded-xl border border-border bg-bg-panel min-h-[88px] px-5 py-4 flex flex-col justify-center transition-all duration-200',
       className
     )}>
-      <div className="flex items-center gap-2.5">
+      <div className="flex items-center gap-2 mb-2">
         {icon && <span className="text-text-muted">{icon}</span>}
-        <span className="text-xs font-bold text-text-muted uppercase tracking-wider">{label}</span>
+        <span className="text-card-title text-text-muted">{label}</span>
       </div>
-      <div className={cn('text-3xl font-black tracking-tight', valueClassName)}>
+      <div className={cn('text-metric', valueClassName)}>
         {value}
       </div>
-      {subtitle && <span className="text-sm text-text-dim mt-1">{subtitle}</span>}
+      {subtitle && <span className="text-muted mt-4">{subtitle}</span>}
     </div>
   );
 }

@@ -2,53 +2,48 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useLatestSignal, useRunSignal, useLatestRegime } from '@/hooks/use-signal';
 import { useLatestFeatures, useBuildFeatures } from '@/hooks/use-features';
-import { useHealth } from '@/hooks/use-health';
-import { KpiCard } from '@/components/widgets/kpi-card';
+import { useQhHistory } from '@/hooks/use-quanthub';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
+import { QueryErrorBanner } from '@/components/ui/query-error-banner';
 import { SignalBadge, RegimeBadge } from '@/components/widgets/regime-badge';
-import { ProbabilityGauge } from '@/components/charts/gauge';
+import { TvCandlestick } from '@/components/charts/tv-candlestick';
 import { FeatureBarChart } from '@/components/charts/bar-chart';
-import { SkeletonCard, SkeletonChart } from '@/components/loading/skeletons';
-import { formatPercent, formatNumber, signalColor, formatTimestamp } from '@/lib/utils';
+import { SkeletonCard } from '@/components/loading/skeletons';
+import { formatPercent, formatTimestamp } from '@/lib/utils';
 import { apiPost } from '@/lib/api-client';
 import { API } from '@/lib/constants';
-import { Zap, TrendingUp, Shield, Gauge, Play, RotateCw, Sparkles } from 'lucide-react';
+import { toUserFacingMessage } from '@/lib/api-error';
+import { Play, Sparkles, LineChart } from 'lucide-react';
 
 const container = { hidden: {}, show: { transition: { staggerChildren: 0.06 } } };
 const item = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } };
 
 export function OverviewPage() {
-  const { data: signal, isLoading: signalLoading } = useLatestSignal();
-  const { data: regime, isLoading: regimeLoading } = useLatestRegime();
-  const { data: health } = useHealth();
+  const { data: signal, isLoading: signalLoading, isError: signalError, error: signalQueryError } = useLatestSignal();
+  const { data: regime } = useLatestRegime();
   const runSignal = useRunSignal();
   const buildFeatures = useBuildFeatures();
 
+  const { data: qhData } = useQhHistory('CLN26');
+  const ohlcData = qhData?.ohlc || [];
+
   const [pipelineStatus, setPipelineStatus] = useState<string>('');
   const [pipelineRunning, setPipelineRunning] = useState(false);
-  const [pipelineProgress, setPipelineProgress] = useState(0);
 
   const runDemoFlow = async () => {
     setPipelineRunning(true);
-    setPipelineProgress(0);
     try {
-      setPipelineStatus('Ingesting demo data...');
-      setPipelineProgress(20);
+      setPipelineStatus('Ingesting demo data…');
       await apiPost(API.INGEST_DEMO);
-
-      setPipelineStatus('Building features...');
-      setPipelineProgress(50);
+      setPipelineStatus('Building features…');
       await apiPost(API.FEATURES_BUILD);
-
-      setPipelineStatus('Running signal engine...');
-      setPipelineProgress(75);
+      setPipelineStatus('Running signal engine…');
       await apiPost(API.SIGNALS_RUN, { instrument: 'WTI', horizon: '5d' });
-
-      setPipelineStatus('✓ Pipeline complete');
-      setPipelineProgress(100);
-    } catch (e: any) {
-      setPipelineStatus(`Error: ${e?.message || 'Pipeline failed'}`);
+      setPipelineStatus('Pipeline finished successfully.');
+    } catch (e: unknown) {
+      setPipelineStatus(toUserFacingMessage(e));
     } finally {
       setPipelineRunning(false);
     }
@@ -56,154 +51,161 @@ export function OverviewPage() {
 
   const hasSignal = signal?.status === 'success' && signal.signal !== 'not_available';
 
+  if (signalLoading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <SkeletonCard />
+        <SkeletonCard />
+        <SkeletonCard />
+      </div>
+    );
+  }
+
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="space-y-8">
-      {/* KPI Row */}
-      <motion.div variants={item} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {signalLoading ? (
-          <>
-            <SkeletonCard /><SkeletonCard /><SkeletonCard /><SkeletonCard />
-          </>
-        ) : (
-          <>
-            <KpiCard
-              label="API Status"
-              value={health?.status === 'api_running' ? 'Online' : 'Offline'}
-              valueClassName={health?.status === 'api_running' ? 'text-accent-green' : 'text-accent-red'}
-              icon={<Shield size={14} />}
-            />
-            <KpiCard
-              label="Latest Signal"
-              value={hasSignal ? signal!.signal!.toUpperCase() : 'N/A'}
-              valueClassName={signalColor(signal?.signal)}
-              icon={<TrendingUp size={14} />}
-              subtitle={hasSignal ? `Confidence: ${formatPercent(signal!.confidence)}` : 'Run pipeline first'}
-            />
-            <KpiCard
-              label="Probability Up"
-              value={hasSignal ? formatPercent(signal!.probability_up) : '—'}
-              valueClassName="text-accent-blue"
-              icon={<Gauge size={14} />}
-              subtitle={hasSignal ? `Expected Return: ${formatNumber(signal!.expected_return, 4)}` : undefined}
-            />
-            <KpiCard
-              label="Market Regime"
-              value={regime?.regime?.replace(/_/g, ' ').toUpperCase() || 'N/A'}
-              valueClassName="text-accent-cyan"
-              icon={<Zap size={14} />}
-              subtitle={regime?.timestamp ? formatTimestamp(String(regime.timestamp)) : undefined}
-            />
-          </>
-        )}
-      </motion.div>
+    <motion.div variants={container} initial="hidden" animate="show" className="space-y-12">
+      {signalError && signalQueryError && (
+        <motion.div variants={item}>
+          <QueryErrorBanner error={signalQueryError} title="Market signal unavailable" />
+        </motion.div>
+      )}
 
-      {/* Pipeline Runner */}
       <motion.div variants={item}>
-        <Card title="Pipeline" subtitle="Execute the full ingestion → features → signal pipeline">
-          <div className="flex flex-wrap items-center gap-2 mb-4">
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => apiPost(API.INGEST_EIA).then(() => setPipelineStatus('EIA ingested'))}
-            >
-              <Fuel size={14} /> Ingest EIA
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              loading={buildFeatures.isPending}
-              onClick={() => buildFeatures.mutate()}
-            >
-              <Layers size={14} /> Build Features
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              loading={runSignal.isPending}
-              onClick={() => runSignal.mutate({ instrument: 'WTI', horizon: '5d' })}
-            >
-              <Activity size={14} /> Run Signal
-            </Button>
-            <div className="w-px h-6 bg-border mx-1" />
-            <Button variant="demo" size="sm" loading={pipelineRunning} onClick={runDemoFlow}>
-              <Sparkles size={14} /> Demo Full Flow
-            </Button>
-          </div>
+        <div className="rounded-xl border border-border bg-bg-panel overflow-hidden relative">
+          <div
+            className="absolute top-0 left-0 w-full h-1"
+            style={{
+              background:
+                'linear-gradient(90deg, var(--color-accent-blue), color-mix(in srgb, var(--color-accent-blue) 10%, transparent))',
+            }}
+          />
 
-          {/* Progress bar */}
-          <div className="h-2 bg-bg-input rounded-full overflow-hidden border border-border">
-            <motion.div
-              className="h-full bg-gradient-to-r from-accent-blue to-accent-green rounded-full"
-              initial={{ width: 0 }}
-              animate={{ width: `${pipelineProgress}%` }}
-              transition={{ duration: 0.3 }}
-            />
-          </div>
-          {pipelineStatus && (
-            <p className="text-xs text-text-muted mt-2 font-mono">{pipelineStatus}</p>
-          )}
-        </Card>
-      </motion.div>
+          <div className="p-8 md:p-12">
+            <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-12">
+              <div>
+                <h2 className="text-card-title mb-2">Market signal</h2>
+                <div className="flex items-center gap-4">
+                  {hasSignal ? (
+                    <SignalBadge signal={signal!.signal} size="lg" />
+                  ) : (
+                    <span className="text-muted">No signal yet</span>
+                  )}
+                  {hasSignal && (
+                    <span className="text-text-dim text-sm font-mono">{formatTimestamp(signal!.timestamp)}</span>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <Button variant="secondary" size="sm" loading={buildFeatures.isPending} onClick={() => buildFeatures.mutate()}>
+                  Build features
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  loading={runSignal.isPending}
+                  onClick={() => runSignal.mutate({ instrument: 'WTI', horizon: '5d' })}
+                >
+                  Run signal
+                </Button>
+                <Button variant="ghost" size="sm" loading={pipelineRunning} onClick={runDemoFlow} title="Run full demo pipeline">
+                  <Sparkles size={14} className="text-accent-blue" />
+                </Button>
+              </div>
+            </div>
 
-      {/* Signal + Features */}
-      <motion.div variants={item} className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {/* Signal gauge */}
-        <Card title="Signal Analysis" subtitle={hasSignal ? `${signal!.instrument} · ${signal!.horizon}` : undefined}>
-          {hasSignal ? (
-            <div className="flex flex-col items-center gap-4">
-              <div className="flex items-center gap-8">
-                <ProbabilityGauge value={signal!.probability_up!} label="Prob Up" size={150} />
-                <div className="text-center space-y-3">
-                  <SignalBadge signal={signal!.signal} size="lg" />
-                  <RegimeBadge regime={signal!.regime} />
-                  <div className="text-xs text-text-muted">
-                    {formatTimestamp(signal!.timestamp)}
-                  </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
+              <div className="flex flex-col gap-4">
+                <span className="text-card-title">Probability up</span>
+                <span className="text-[64px] font-mono font-bold leading-none text-text-primary tracking-tighter">
+                  {hasSignal ? formatPercent(signal!.probability_up) : '—'}
+                </span>
+              </div>
+
+              <div className="flex flex-col gap-4">
+                <span className="text-card-title">Confidence</span>
+                <span className="text-metric text-text-primary">
+                  {hasSignal ? formatPercent(signal!.confidence) : '—'}
+                </span>
+              </div>
+
+              <div className="flex flex-col gap-4">
+                <span className="text-card-title">Market regime</span>
+                <div className="pt-2">
+                  {hasSignal ? <RegimeBadge regime={signal!.regime} /> : <span className="text-metric text-text-dim">—</span>}
                 </div>
               </div>
             </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-12 text-text-muted">
-              <Play size={32} className="mb-3 opacity-40" />
-              <p className="text-sm">No signal available</p>
-              <p className="text-xs mt-1">Run the pipeline to generate signals</p>
-            </div>
-          )}
-        </Card>
 
-        {/* Feature contributions */}
-        <Card title="Feature Z-Scores" subtitle="Latest standardized feature values">
-          {hasSignal && Object.keys(signal!.feature_zscores).length > 0 ? (
-            <FeatureBarChart data={signal!.feature_zscores} height={250} />
-          ) : (
-            <div className="flex items-center justify-center py-16 text-text-muted text-sm">
-              No feature data — run pipeline first
+            {pipelineStatus && (
+              <div className="mt-8 text-sm text-text-secondary border-t border-border pt-4">
+                <span className="text-text-dim">Status: </span>
+                {pipelineStatus}
+              </div>
+            )}
+          </div>
+        </div>
+      </motion.div>
+
+      <motion.div variants={item}>
+        <div className="mb-6">
+          <h2 className="text-section-title text-text-primary">Price action</h2>
+          <p className="text-muted mt-1">CLN26 WTI crude oil</p>
+        </div>
+        <Card noPadding className="overflow-hidden">
+          {ohlcData.length > 0 ? (
+            <div className="p-1">
+              <TvCandlestick data={ohlcData} height={400} />
             </div>
+          ) : (
+            <EmptyState
+              className="border-0 bg-transparent py-12"
+              icon={LineChart}
+              title="No price data yet"
+              description="Ingest OHLC from QuantHub to plot CLN26 here, or run the demo pipeline from the card above."
+            />
           )}
         </Card>
       </motion.div>
 
-      {/* Signal JSON */}
-      {hasSignal && (
-        <motion.div variants={item}>
-          <Card title="Raw Signal Response">
-            <pre className="bg-bg-input border border-border rounded-xl p-4 overflow-auto max-h-64 text-xs font-mono text-text-secondary">
-              {JSON.stringify(signal, null, 2)}
-            </pre>
+      <motion.div variants={item}>
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h2 className="text-section-title text-text-primary">Supporting factors</h2>
+            <p className="text-muted mt-1">Drivers behind the latest model read</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card title="Feature scores" subtitle="Latest z-scores contributing to the model">
+            {hasSignal && Object.keys(signal!.feature_zscores).length > 0 ? (
+              <div className="mt-4">
+                <FeatureBarChart data={signal!.feature_zscores} height={250} />
+              </div>
+            ) : (
+              <EmptyState
+                className="border-0 bg-transparent py-10"
+                title="No feature scores"
+                description="Run the signal engine after features are built to see which inputs mattered most."
+              />
+            )}
           </Card>
-        </motion.div>
-      )}
+
+          <Card title="Signal payload" subtitle="Structured response from the inference engine">
+            {hasSignal ? (
+              <div className="mt-4">
+                <pre className="bg-[#050a10] border border-border rounded-lg p-6 overflow-auto max-h-[250px] text-[13px] font-mono text-text-secondary">
+                  {JSON.stringify(signal, null, 2)}
+                </pre>
+              </div>
+            ) : (
+              <EmptyState
+                className="border-0 bg-transparent py-10"
+                title="No payload yet"
+                description="Run a signal to inspect the raw JSON returned by the engine."
+              />
+            )}
+          </Card>
+        </div>
+      </motion.div>
     </motion.div>
   );
-}
-
-// Tiny icon imports used in JSX
-function Fuel(props: { size: number }) {
-  return <svg width={props.size} height={props.size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 22V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"/><path d="M15 22H3"/><path d="M15 10h2a2 2 0 0 1 2 2v2a2 2 0 0 0 2 2h0a2 2 0 0 0 2-2V9.83a2 2 0 0 0-.59-1.42L18 4"/><path d="M7 10h4"/></svg>;
-}
-function Layers(props: { size: number }) {
-  return <svg width={props.size} height={props.size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>;
-}
-function Activity(props: { size: number }) {
-  return <svg width={props.size} height={props.size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>;
 }

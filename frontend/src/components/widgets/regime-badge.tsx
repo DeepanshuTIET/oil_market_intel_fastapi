@@ -8,13 +8,16 @@ interface RegimeBadgeProps {
 }
 
 export function RegimeBadge({ regime, className }: RegimeBadgeProps) {
-  const label = regime ? REGIME_LABELS[regime] || regime.replace(/_/g, ' ') : 'Unknown';
+  const label = regime
+    ? REGIME_LABELS[regime] ||
+      regime.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+    : 'Unknown';
   const color = regime ? REGIME_COLORS[regime] || '#7a8baa' : '#7a8baa';
 
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border',
+        'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold tracking-tight border',
         className
       )}
       style={{
@@ -50,15 +53,19 @@ export function SignalBadge({ signal, size = 'md', className }: SignalBadgeProps
   };
 
   const s = signal || 'not_available';
+  const display =
+    s === 'not_available' ? 'N/A' : s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
 
   return (
-    <span className={cn(
-      'inline-flex items-center font-extrabold uppercase tracking-wider rounded-full border',
-      colors[s] || colors.not_available,
-      sizes[size],
-      className
-    )}>
-      {s === 'not_available' ? 'N/A' : s}
+    <span
+      className={cn(
+        'inline-flex items-center font-semibold tracking-tight rounded-full border',
+        colors[s] || colors.not_available,
+        sizes[size],
+        className
+      )}
+    >
+      {display}
     </span>
   );
 }

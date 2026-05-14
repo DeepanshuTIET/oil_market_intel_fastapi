@@ -99,7 +99,7 @@ def debug_app_routes():
             {
                 "path": route.path,
                 "name": route.name,
-                "methods": sorted(list(route.methods)) if route.methods else [],
+                "methods": sorted(list(route.methods)) if getattr(route, "methods", None) else [],
             }
             for route in app.routes
         ],
@@ -156,14 +156,16 @@ app.mount(
 )
 
 
+from fastapi.responses import FileResponse
+
 @app.get("/", include_in_schema=False)
 def home():
-    return RedirectResponse(url="/static/index.html")
+    return FileResponse(str(STATIC_DIR / "index.html"))
 
 
 @app.get("/dashboard", include_in_schema=False)
 def dashboard():
-    return RedirectResponse(url="/static/index.html")
+    return FileResponse(str(STATIC_DIR / "index.html"))
 
 
 if __name__ == "__main__":

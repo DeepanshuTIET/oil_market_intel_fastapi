@@ -7,42 +7,48 @@
    ============================================================ */
 
 @theme {
-  --color-bg-primary: #080d1a;
-  --color-bg-secondary: #0d1426;
-  --color-bg-card: #121a2f;
-  --color-bg-card-alt: #0e1628;
-  --color-bg-elevated: #17213a;
-  --color-bg-input: #0a1020;
-
-  --color-border: #1e2b45;
-  --color-border-light: #25304a;
-
-  --color-text-primary: #eef3ff;
-  --color-text-secondary: #9aa8c7;
-  --color-text-muted: #7a8baa;
+  /* Backgrounds */
+  --color-bg-primary: #071019;
+  --color-bg-panel: #0d1726;
+  --color-bg-panel-2: #101c2e;
+  
+  /* Text */
+  --color-text-primary: #e6edf7;
+  --color-text-secondary: #94a3b8;
   --color-text-dim: #4a5a7a;
+  
+  /* Accents */
+  --color-accent-blue: #3b82f6;
+  
+  /* Status */
+  --color-success: #22c55e;
+  --color-danger: #ef4444;
+  --color-warning: #f59e0b;
 
-  --color-accent-blue: #4f8cff;
-  --color-accent-green: #22c55e;
-  --color-accent-red: #ef4444;
-  --color-accent-amber: #f59e0b;
-  --color-accent-purple: #8b5cf6;
-  --color-accent-cyan: #06b6d4;
+  --color-bullish: var(--color-success);
+  --color-bearish: var(--color-danger);
+  --color-neutral: var(--color-warning);
 
-  --color-bullish: #22c55e;
-  --color-bearish: #ef4444;
-  --color-neutral: #f59e0b;
+  --color-border: rgba(255, 255, 255, 0.05);
 
   --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 20px;
+  /* Spacing Scale: 4, 8, 12, 16, 24, 32, 48 */
+  --spacing-1: 4px;
+  --spacing-2: 8px;
+  --spacing-3: 12px;
+  --spacing-4: 16px;
+  --spacing-6: 24px;
+  --spacing-8: 32px;
+  --spacing-12: 48px;
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
   --radius-full: 9999px;
 }
-
 
 /* Base resets */
 *, *::before, *::after {
@@ -88,7 +94,7 @@ body {
 
 /* Selection */
 ::selection {
-  background: rgba(79, 140, 255, 0.3);
+  background: rgba(59, 130, 246, 0.3);
   color: var(--color-text-primary);
 }
 
@@ -98,33 +104,69 @@ body {
   outline-offset: 2px;
 }
 
-/* Custom utilities */
-@utility glass {
-  background: rgba(18, 26, 47, 0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+/* Typography Hierarchy Utilities */
+@utility text-page-title {
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.2;
 }
 
-@utility glow-blue {
-  box-shadow: 0 0 20px rgba(79, 140, 255, 0.15);
+@utility text-section-title {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.3;
 }
 
-@utility glow-green {
-  box-shadow: 0 0 20px rgba(34, 197, 94, 0.15);
+@utility text-card-title {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--color-text-secondary);
 }
 
-@utility glow-red {
-  box-shadow: 0 0 20px rgba(239, 68, 68, 0.15);
+@utility text-metric {
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1.1;
+  font-family: var(--font-mono);
+}
+
+@utility text-body {
+  font-size: 14px;
+  font-weight: 400;
+}
+
+@utility text-muted {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-text-secondary);
+}
+
+/* Table Utilities */
+@utility table-header {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--color-text-secondary);
+}
+
+@utility table-row {
+  height: 44px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  transition: background-color 0.15s ease;
+}
+
+.table-row:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+@utility font-numeric {
+  font-family: var(--font-mono);
 }
 
 /* Animations */
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
+  from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
@@ -133,25 +175,11 @@ body {
   50% { opacity: 0.4; }
 }
 
-@keyframes slideIn {
-  from { opacity: 0; transform: translateX(-12px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-
-.animate-shimmer {
-  background: linear-gradient(90deg, transparent 0%, rgba(79, 140, 255, 0.06) 50%, transparent 100%);
-  background-size: 200% 100%;
-  animation: shimmer 2s infinite;
-}
-
 .animate-fade-in {
-  animation: fadeIn 0.4s ease-out;
-}
-
-.animate-slide-in {
-  animation: slideIn 0.3s ease-out;
+  animation: fadeIn 0.3s ease-out;
 }
 
 .animate-pulse-dot {
   animation: pulse-dot 2s ease-in-out infinite;
 }
+

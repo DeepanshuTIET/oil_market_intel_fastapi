@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { KpiCard } from '@/components/widgets/kpi-card';
 import { apiPost, apiGet } from '@/lib/api-client';
+import { toUserFacingMessage } from '@/lib/api-error';
 import { API } from '@/lib/constants';
 import { RefreshCw, Terminal, Database, Settings, Route, Trash2, Sparkles } from 'lucide-react';
 
@@ -26,8 +27,8 @@ export function DebugPage() {
     try {
       const r = await apiPost<any>(API.INGEST_DEMO);
       setDemoResult(`✓ ${r.records} synthetic records created`);
-    } catch (e: any) {
-      setDemoResult(`✗ ${e?.message || 'Failed'}`);
+    } catch (e: unknown) {
+      setDemoResult(toUserFacingMessage(e));
     }
   };
 
@@ -45,7 +46,7 @@ export function DebugPage() {
       <motion.div variants={anim}>
         <Card title="Admin Actions">
           <div className="flex flex-wrap gap-2">
-            <Button variant="demo" size="sm" onClick={ingestDemo}><Sparkles size={14} /> Generate Demo Data</Button>
+            <Button variant="secondary" size="sm" onClick={ingestDemo}><Sparkles size={14} /> Generate Demo Data</Button>
             <Button variant="secondary" size="sm" onClick={() => appLogs.refetch()}><Terminal size={14} /> Fetch App Logs</Button>
             <Button variant="secondary" size="sm" onClick={() => eiaLogs.refetch()}><Terminal size={14} /> Fetch EIA Logs</Button>
           </div>

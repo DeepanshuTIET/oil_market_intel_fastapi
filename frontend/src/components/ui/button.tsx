@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils';
 
-type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost' | 'demo';
+type ButtonVariant = 'primary' | 'secondary' | 'ghost';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
@@ -9,24 +9,22 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variants: Record<ButtonVariant, string> = {
-  primary: 'bg-accent-blue text-white hover:brightness-110 glow-blue',
-  secondary: 'bg-bg-elevated text-text-secondary hover:bg-border hover:text-text-primary border border-border',
-  danger: 'bg-accent-red text-white hover:brightness-110 glow-red',
-  ghost: 'bg-transparent text-text-muted hover:text-text-primary hover:bg-bg-elevated',
-  demo: 'bg-accent-purple text-white hover:brightness-110',
+  primary: 'bg-accent-blue text-white hover:bg-blue-600 border border-transparent',
+  secondary: 'bg-transparent text-text-secondary border border-border hover:bg-[rgba(255,255,255,0.04)] hover:text-text-primary',
+  ghost: 'bg-transparent text-text-muted hover:text-text-primary hover:bg-[rgba(255,255,255,0.04)] border border-transparent',
 };
 
 const sizes = {
-  sm: 'px-3 py-2 text-sm',
-  md: 'px-4 py-2.5 text-base',
-  lg: 'px-6 py-3 text-lg',
+  sm: 'px-3 py-1.5 text-xs',
+  md: 'px-4 py-2 text-sm',
+  lg: 'px-6 py-2.5 text-base',
 };
 
 export function Button({ variant = 'primary', size = 'md', loading, className, children, disabled, ...props }: ButtonProps) {
   return (
     <button
       className={cn(
-        'inline-flex items-center justify-center gap-2 font-bold rounded-xl transition-all duration-150 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed',
+        'inline-flex items-center justify-center gap-2 font-medium rounded-md transition-all duration-150 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed',
         variants[variant],
         sizes[size],
         className

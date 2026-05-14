@@ -67,45 +67,45 @@ Signals can optionally be pushed to Microsoft Teams via webhook for real-time al
 ## Architecture
 
 ```
-┌──────────────────────────────────────────────────────────────────┐
-│                        Data Sources                              │
+┌─────────────────────────────────────────────────────────────────┐
+│                        Data Sources                             │
 │  EIA PDF  │  CFTC COT  │  QuantHub  │  NewsAPI  │  X (Twitter)  │
 └─────┬─────┴─────┬──────┴─────┬──────┴─────┬─────┴──────┬────────┘
       │           │            │            │            │
       ▼           ▼            ▼            ▼            ▼
 ┌──────────────────────────────────────────────────────────────────┐
-│                    Ingestion Adapters                             │
+│                    Ingestion Adapters                            │
 │  app/ingestion/eia.py │ cot_petroleum.py │ quanthub.py │ etc.    │
 └─────────────────────────────┬────────────────────────────────────┘
                               │
                               ▼
 ┌──────────────────────────────────────────────────────────────────┐
-│              raw_observations (canonical store)                   │
+│              raw_observations (canonical store)                  │
 │         timestamp │ source │ series_name │ raw_value │ metadata  │
 └─────────────────────────────┬────────────────────────────────────┘
                               │  POST /features/build
                               ▼
 ┌──────────────────────────────────────────────────────────────────┐
-│                    Feature Builder                                │
-│  z-scores │ momentum │ inventory surprise │ WoW scaling           │
+│                    Feature Builder                               │
+│  z-scores │ momentum │ inventory surprise │ WoW scaling          │
 └─────────────────────────────┬────────────────────────────────────┘
                               │
                               ▼
 ┌──────────────────────────────────────────────────────────────────┐
-│            oil_features (standardized feature matrix)             │
-│  timestamp │ feature_name │ standardized_value │ confidence       │
+│            oil_features (standardized feature matrix)            │
+│  timestamp │ feature_name │ standardized_value │ confidence      │
 └─────────────────────────────┬────────────────────────────────────┘
                               │  POST /signals/run
                               ▼
 ┌──────────────────────────────────────────────────────────────────┐
-│              Signal Engine                                        │
+│              Signal Engine                                       │
 │  Regime Detection → Factor Model → Score → Probability → Signal  │
 └─────────────────────────────┬────────────────────────────────────┘
                               │
                               ▼
 ┌──────────────────────────────────────────────────────────────────┐
-│              oil_signals (model outputs)                          │
-│  probability_up │ expected_return │ signal │ regime │ contribs    │
+│              oil_signals (model outputs)                         │
+│  probability_up │ expected_return │ signal │ regime │ contribs   │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
